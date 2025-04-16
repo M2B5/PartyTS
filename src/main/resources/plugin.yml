@@ -1,0 +1,4 @@
+name: PartyTS
+version: '1.0-SNAPSHOT'
+main: me._2818.partyTS.PartyTS
+api-version: '1.21'
