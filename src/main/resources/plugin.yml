@@ -1,4 +1,9 @@
 name: PartyTS
-version: '1.0-SNAPSHOT'
+version: 1.0
 main: me._2818.partyTS.PartyTS
-api-version: '1.21'
+api-version: 1.21
+commands:
+  party:
+    description: Party management commands
+    usage: /<command> [create|invite|kick|leave|list]
+    aliases: [p]
