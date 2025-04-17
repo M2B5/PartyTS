@@ -1,4 +1,4 @@
-package me._2818;
+package me._2818.partyTS;
 
 import me.makkuusen.timing.system.api.TimingSystemAPI;
 import me.makkuusen.timing.system.database.EventDatabase;
