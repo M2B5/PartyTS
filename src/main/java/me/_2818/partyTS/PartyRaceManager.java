@@ -1,12 +1,11 @@
 package me._2818.partyTS;
 
-import me.makkuusen.timing.system.TimingSystem;
-import me.makkuusen.timing.system.api.TimingSystemAPI;
 import me.makkuusen.timing.system.commands.CommandHeat;
 import me.makkuusen.timing.system.database.EventDatabase;
 import me.makkuusen.timing.system.event.Event;
 import me.makkuusen.timing.system.heat.Heat;
 import me.makkuusen.timing.system.heat.HeatState;
+import me.makkuusen.timing.system.participant.Driver;
 import me.makkuusen.timing.system.round.Round;
 import me.makkuusen.timing.system.round.RoundType;
 import me.makkuusen.timing.system.track.Track;
@@ -81,10 +80,25 @@ public class PartyRaceManager {
             finalHeat.startCountdown(10);
         }, 20L);
 
+        Bukkit.getScheduler().runTaskLater(plugin, () -> {
+            endPartyRace(player);
+        }, 36000L);
+
         return true;
     }
 
-    public static void endPartyRace(Player player, Track track, int laps, int pits) {
+    public void endPartyRace(Player player) {
+        var maybeDriver = EventDatabase.getDriverFromRunningHeat(player.getUniqueId());
+        if(maybeDriver.isEmpty()) return;
+        
+        Driver driver = maybeDriver.get();
+        Heat heat = driver.getHeat();
+        Round round = heat.getRound();
+        Event event = round.getEvent();
 
+        heat.finishHeat();
+        round.finish(event);
+        event.finish();
+        EventDatabase.removeEventHard(event);
     }
 }
