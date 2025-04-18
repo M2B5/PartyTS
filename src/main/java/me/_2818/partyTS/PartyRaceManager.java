@@ -97,8 +97,17 @@ public class PartyRaceManager {
         Event event = round.getEvent();
 
         heat.finishHeat();
-        round.finish(event);
-        event.finish();
-        EventDatabase.removeEventHard(event);
+
+        Bukkit.getScheduler().runTaskLater(plugin, () -> {
+            round.finish(event);
+        }, 20L);
+
+        Bukkit.getScheduler().runTaskLater(plugin, () -> {
+            event.finish();
+        }, 40L);
+
+        Bukkit.getScheduler().runTaskLater(plugin, () -> {
+            EventDatabase.removeEventHard(event);
+        }, 60L);
     }
 }
