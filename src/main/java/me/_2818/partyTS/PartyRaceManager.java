@@ -1,6 +1,8 @@
 package me._2818.partyTS;
 
+import me.makkuusen.timing.system.TimingSystem;
 import me.makkuusen.timing.system.api.TimingSystemAPI;
+import me.makkuusen.timing.system.commands.CommandHeat;
 import me.makkuusen.timing.system.database.EventDatabase;
 import me.makkuusen.timing.system.event.Event;
 import me.makkuusen.timing.system.heat.Heat;
@@ -10,12 +12,23 @@ import me.makkuusen.timing.system.round.RoundType;
 import me.makkuusen.timing.system.track.Track;
 
 import java.util.Optional;
+import java.util.UUID;
 
+import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
+import org.bukkit.plugin.Plugin;
 
 public class PartyRaceManager {
-    public static boolean startPartyRace(Player player, Track track, int laps, int pits) {
-        final String name = "Party Race " + track.getDisplayName() + " " + player.getName();
+    private final PartyManager partyManager;
+    private final Plugin plugin;
+
+    public PartyRaceManager(PartyManager partyManager, Plugin plugin) {
+        this.partyManager = partyManager;
+        this.plugin = plugin;
+    }
+
+    public boolean startPartyRace(Player player, Track track, int laps, int pits) {
+        final String name = "Party_Race_" + track.getDisplayName() + "_" + player.getName();
         Optional<Event> maybeEvent = EventDatabase.eventNew(player.getUniqueId(), name);
         if(maybeEvent.isEmpty()) return false;
         Event event = maybeEvent.get();
@@ -53,6 +66,20 @@ public class PartyRaceManager {
             heat = null;
             return false;
         }
+
+        for (UUID memberUUID : partyManager.getPartyByLeader(player).getMembers()) {
+            Player member = Bukkit.getPlayer(memberUUID);
+            if (member != null) {
+                EventDatabase.heatDriverNew(memberUUID, heat, heat.getDrivers().size() + 1);
+            }
+        }
+
+        CommandHeat.onSortByRandom(player, heat);
+        
+        final Heat finalHeat = heat;
+        Bukkit.getScheduler().runTaskLater(plugin, () -> {
+            finalHeat.startCountdown(10);
+        }, 20L);
 
         return true;
     }

@@ -1,10 +1,10 @@
 package me._2818.partyTS.commands;
 
-import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
+import org.bukkit.plugin.Plugin;
 
 import me._2818.partyTS.PartyRaceManager;
 import me._2818.partyTS.PartyManager;
@@ -14,9 +14,11 @@ import me.makkuusen.timing.system.track.locations.TrackLocation;
 
 public class PartyRaceCommand implements CommandExecutor {
     private final PartyManager partyManager;
+    private final Plugin plugin;
 
-    public PartyRaceCommand(PartyManager partyManager) {
+    public PartyRaceCommand(PartyManager partyManager, Plugin plugin) {
         this.partyManager = partyManager;
+        this.plugin = plugin;
     }
 
     @Override
@@ -34,8 +36,7 @@ public class PartyRaceCommand implements CommandExecutor {
         }
 
         var possibleTrack = TimingSystemAPI.getTrack(args[0]);
-        Bukkit.getLogger().info(args[0]);
-        Bukkit.getLogger().info(possibleTrack.toString());
+
 
         if (possibleTrack.isEmpty()) {
             player.sendMessage("§cTrack not found!");
@@ -66,7 +67,8 @@ public class PartyRaceCommand implements CommandExecutor {
             pits = Integer.parseInt(args[2]);
         }
 
-        PartyRaceManager.startPartyRace(player, t, laps, pits);
+        PartyRaceManager partyRaceManager = new PartyRaceManager(partyManager, plugin);
+        partyRaceManager.startPartyRace(player, t, laps, pits);
         
         return true;
     }
