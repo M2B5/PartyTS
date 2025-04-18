@@ -57,13 +57,13 @@ public class PartyRaceCommand implements CommandExecutor {
 
         int laps = 3;
 
-        if (args.length == 2) {
+        if (args.length >= 2) {
             laps = Integer.parseInt(args[1]);
         }
 
         int pits = 0;
 
-        if (args.length == 3) {
+        if (args.length >= 3) {
             pits = Integer.parseInt(args[2]);
         }
 
