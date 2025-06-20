@@ -1,0 +1,61 @@
+# General messages
+error:
+  player-only: '<red>This command can only be used by players!'
+  no-permission: '<red>You do not have permission to use this command!'
+  player-not-found: '<red>Player not found!'
+  no-invite: "<red>You don't have any valid party invites!"
+  not-in-party: '<red>You are not in a party!'
+  not-leader: '<red>Only the party leader can do this!'
+  cannot-kick-self: '<red>You cannot kick yourself!'
+  usage-format: '<red>Usage: %s'
+
+# Party creation
+party:
+  created: '<green>Party created successfully!'
+  already-in-one: '<red>You are already in a party!'
+  create-failed: '<red>Failed to create a party!'
+  auto-created: '<green>Party created automatically!'
+
+# Invites
+invite:
+  sent: '<green>Invitation sent to %s!'
+  received: '<green>You have been invited to join %s\'s party! <gray>[<green><bold>Accept</bold></green>] [<red><bold>Decline</bold></red>]</gray>'
+  accepted: '<green>You have joined the party!'
+  declined: '<green>You have declined the party invite!'
+  expired: '<red>The party invite has expired!'
+  already-invited: '<red>%s already has a pending invite!'
+  already-in-party: '<red>%s is already in a party!'
+  cooldown: '<red>You must wait %d seconds before inviting that player again.'
+  accepted-notification: '<green>%s has accepted your party invite!'
+  declined-notification: '<red>%s has declined your party invite!'
+  expired-notification: '<red>Your party invite to %s has expired!'
+
+# Member actions
+member:
+  joined: '<green>%s has joined the party!'
+  left: '<red>%s has left the party!'
+  kicked: '<red>You have been kicked from the party!'
+  kicked-other: '<green>Kicked %s from the party!'
+
+# Race
+race:
+  starting: '<green>Starting party race on %s!'
+  finished: '<green>The race has finished!'
+  player-finished: '<green>%s has finished the race! You have 30s to finish!'
+  track-not-found: '<red>Track not found!'
+  invalid-laps: '<red>Invalid number of laps!'
+  invalid-pits: '<red>Invalid number of pits!'
+  not-leader: '<red>Only the party leader can start a race!'
+
+# Command usages
+command:
+  usage: '<gold>=== Party Commands ==='
+  usage-format: '<red>Usage: %s'
+  create: '<yellow>/party create</yellow> <gray>- Create a new party</gray>'
+  invite: '<yellow>/party invite &lt;player&gt;</yellow> <gray>- Invite a player to your party</gray>'
+  accept: '<yellow>/party accept</yellow> <gray>- Accept a party invite</gray>'
+  decline: '<yellow>/party decline</yellow> <gray>- Decline a party invite</gray>'
+  kick: '<yellow>/party kick &lt;player&gt;</yellow> <gray>- Kick a player from your party</gray>'
+  leave: '<yellow>/party leave</yellow> <gray>- Leave your current party</gray>'
+  list: '<yellow>/party list</yellow> <gray>- List party members</gray>'
+  race: '<yellow>/party race &lt;track&gt; [laps] [pits]</yellow> <gray>- Start a party race</gray>'

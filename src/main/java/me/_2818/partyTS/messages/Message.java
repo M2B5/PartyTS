@@ -47,7 +47,18 @@ public enum Message {
     RACE_TRACK_NOT_FOUND("race.track-not-found"),
     RACE_INVALID_LAPS("race.invalid-laps"),
     RACE_INVALID_PITS("race.invalid-pits"),
-    RACE_NOT_LEADER("race.not-leader");
+    RACE_NOT_LEADER("race.not-leader"),
+    
+    // Command usages
+    COMMAND_USAGE("command.usage"),
+    COMMAND_CREATE("command.create"),
+    COMMAND_INVITE("command.invite"),
+    COMMAND_ACCEPT("command.accept"),
+    COMMAND_DECLINE("command.decline"),
+    COMMAND_KICK("command.kick"),
+    COMMAND_LEAVE("command.leave"),
+    COMMAND_LIST("command.list"),
+    COMMAND_RACE("command.race");
     
     private final String key;
     

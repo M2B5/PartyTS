@@ -33,7 +33,7 @@ public class PartyCommand implements CommandExecutor {
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         if (!(sender instanceof Player)) {
-            sender.sendMessage(Message.PLAYER_ONLY.asComponent());
+            sender.sendMessage(Message.PLAYER_ONLY.asComponent("This command can only be used by players."));
             return true;
         }
 
