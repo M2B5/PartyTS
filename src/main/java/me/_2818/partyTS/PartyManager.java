@@ -8,11 +8,13 @@ import org.bukkit.scheduler.BukkitTask;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 
 public class PartyManager {
     private final Map<UUID, Party> leaderParties;
     private final Map<UUID, Party> playerParties;
     private final Map<UUID, PartyInvite> pendingInvites;
+    private final Map<UUID, Map<UUID, Long>> inviteCooldowns;
     private BukkitTask cleanupTask;
     private final Plugin plugin;
 
@@ -21,31 +23,39 @@ public class PartyManager {
         this.leaderParties = new HashMap<>();
         this.playerParties = new HashMap<>();
         this.pendingInvites = new HashMap<>();
+        this.inviteCooldowns = new HashMap<>();
         this.plugin = plugin;
-        
-        // Start cleanup task
-        this.cleanupTask = Bukkit.getScheduler().runTaskTimer(plugin, this::cleanupExpiredInvites, 20L, 20L);
+
+        this.cleanupTask = Bukkit.getScheduler().runTaskTimer(plugin, this::cleanupTasks, 20L, 20L);
     }
 
-    private void cleanupExpiredInvites() {
+    private void cleanupTasks() {
+        long now = System.currentTimeMillis();
+        long cooldownMillis = plugin.getConfig().getInt("invitetimeout", 30) * 1000L;
+
         pendingInvites.entrySet().removeIf(entry -> {
             PartyInvite invite = entry.getValue();
             if (invite.isExpired()) {
                 Player invitedPlayer = Bukkit.getPlayer(entry.getKey());
                 Player leader = Bukkit.getPlayer(invite.getInviter());
-                
+
                 if (invitedPlayer != null && invitedPlayer.isOnline()) {
                     invitedPlayer.sendMessage("§cYour party invite has expired!");
                 }
-                
+
                 if (leader != null && leader.isOnline()) {
-                    leader.sendMessage("§cYour party invite to " + 
-                        (invitedPlayer != null ? invitedPlayer.getName() : "a player") + 
-                        " has expired!");
+                    leader.sendMessage("§cYour party invite to " +
+                            (invitedPlayer != null ? invitedPlayer.getName() : "a player") +
+                            " has expired!");
                 }
                 return true;
             }
             return false;
+        });
+
+        inviteCooldowns.entrySet().removeIf(outerEntry -> {
+            outerEntry.getValue().entrySet().removeIf(innerEntry -> (now - innerEntry.getValue()) > cooldownMillis);
+            return outerEntry.getValue().isEmpty();
         });
     }
 
@@ -72,15 +82,13 @@ public class PartyManager {
             return false;
         }
 
-        // Check if player already has a pending invite
-        if (pendingInvites.containsKey(player.getUniqueId())) {
-            PartyInvite existingInvite = pendingInvites.get(player.getUniqueId());
-            if (!existingInvite.isExpired()) {
-                return false;
-            }
+        if (hasPendingInvite(player)) {
+            return false;
         }
 
         pendingInvites.put(player.getUniqueId(), new PartyInvite(party, party.getLeader(), plugin));
+        inviteCooldowns.computeIfAbsent(player.getUniqueId(), k -> new HashMap<>())
+                .put(party.getLeader(), System.currentTimeMillis());
         return true;
     }
 
@@ -122,7 +130,6 @@ public class PartyManager {
         }
 
         if (party.isLeader(player.getUniqueId())) {
-            // If leader leaves, disband the party
             for (UUID memberUUID : party.getMembers()) {
                 playerParties.remove(memberUUID);
             }
@@ -155,4 +162,36 @@ public class PartyManager {
         PartyInvite invite = pendingInvites.get(player.getUniqueId());
         return invite != null && !invite.isExpired() ? invite.getInviter() : null;
     }
-} 
+
+    public boolean isOnInviteCooldown(Player inviter, Player invited) {
+        Map<UUID, Long> cooldownsForInvited = inviteCooldowns.get(invited.getUniqueId());
+        if (cooldownsForInvited == null) {
+            return false;
+        }
+
+        Long lastInviteTime = cooldownsForInvited.get(inviter.getUniqueId());
+        if (lastInviteTime == null) {
+            return false;
+        }
+
+        long cooldownMillis = plugin.getConfig().getInt("invitetimeout", 30) * 1000L;
+        return (System.currentTimeMillis() - lastInviteTime) < cooldownMillis;
+    }
+
+    public long getInviteCooldownSeconds(Player inviter, Player invited) {
+        Map<UUID, Long> cooldownsForInvited = inviteCooldowns.get(invited.getUniqueId());
+        if (cooldownsForInvited == null) {
+            return 0;
+        }
+
+        Long lastInviteTime = cooldownsForInvited.get(inviter.getUniqueId());
+        if (lastInviteTime == null) {
+            return 0;
+        }
+
+        long cooldownMillis = plugin.getConfig().getInt("invitetimeout", 30) * 1000L;
+        long remainingMillis = (lastInviteTime + cooldownMillis) - System.currentTimeMillis();
+
+        return remainingMillis > 0 ? TimeUnit.MILLISECONDS.toSeconds(remainingMillis) + 1 : 0;
+    }
+}

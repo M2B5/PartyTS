@@ -130,7 +130,13 @@ public class PartyCommand implements CommandExecutor {
             return;
         }
 
+        if (partyManager.isOnInviteCooldown(player, target)) {
+            player.sendMessage("§cYou must wait " + partyManager.getInviteCooldownSeconds(player, target) + " seconds before inviting that player again.");
+            return;
+        }
+
         if (partyManager.invitePlayer(party, target)) {
+            player.sendMessage("§aInvite sent to " + target.getName() + "!");
             Component inviteMessage = Component.text()
                     .append(Component.text("You have been invited to join ", NamedTextColor.GREEN))
                     .append(Component.text(player.getName() + "'s party!", NamedTextColor.GREEN))
@@ -142,7 +148,7 @@ public class PartyCommand implements CommandExecutor {
                     .append(Component.text("[Decline]", NamedTextColor.RED, TextDecoration.BOLD)
                             .clickEvent(ClickEvent.runCommand("/party decline")))
                     .append(Component.newline())
-                    .append(Component.text("This invite will expire in 30 seconds", NamedTextColor.GRAY))
+                    .append(Component.text("This invite will expire in " + plugin.getConfig().getInt("invitetimeout") + " seconds", NamedTextColor.GRAY))
                     .build();
             target.sendMessage(inviteMessage);
         } else {
@@ -155,9 +161,10 @@ public class PartyCommand implements CommandExecutor {
     }
 
     private void handleAccept(Player player) {
+        UUID inviterUUID = partyManager.getInviter(player);
+
         if (partyManager.acceptInvite(player)) {
             Party party = partyManager.getPlayerParty(player);
-            UUID inviterUUID = partyManager.getInviter(player);
             Player inviter = inviterUUID != null ? Bukkit.getPlayer(inviterUUID) : null;
 
             player.sendMessage("§aYou have joined the party!");
@@ -172,8 +179,9 @@ public class PartyCommand implements CommandExecutor {
     }
 
     private void handleDecline(Player player) {
+        UUID inviterUUID = partyManager.getInviter(player);
+
         if (partyManager.declineInvite(player)) {
-            UUID inviterUUID = partyManager.getInviter(player);
             Player inviter = inviterUUID != null ? Bukkit.getPlayer(inviterUUID) : null;
 
             player.sendMessage("§aYou have declined the party invite!");
