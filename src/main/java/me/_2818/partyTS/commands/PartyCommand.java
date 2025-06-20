@@ -7,8 +7,10 @@ import me.makkuusen.timing.system.api.TimingSystemAPI;
 import me.makkuusen.timing.system.track.Track;
 import me.makkuusen.timing.system.track.locations.TrackLocation;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.ComponentBuilder;
 import net.kyori.adventure.text.event.ClickEvent;
 import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
@@ -23,9 +25,21 @@ public class PartyCommand implements CommandExecutor {
     private final PartyManager partyManager;
     private final Plugin plugin;
 
+    private final TextColor primaryColor;
+    private final TextColor secondaryColor;
+    private final TextColor defaultColor;
+    private final TextColor acceptColor;
+    private final TextColor denyColor;
+
     public PartyCommand(PartyManager partyManager, Plugin plugin) {
         this.partyManager = partyManager;
         this.plugin = plugin;
+
+        this.primaryColor = TextColor.fromHexString("#" + plugin.getConfig().getString("primarycolour", "327eee"));
+        this.secondaryColor = TextColor.fromHexString("#" + plugin.getConfig().getString("secondarycolour", "f64040"));
+        this.defaultColor = TextColor.fromHexString("#" + plugin.getConfig().getString("defaultcolour", "ffffff"));
+        this.acceptColor = TextColor.fromHexString("#" + plugin.getConfig().getString("acceptcolour", "23ff00"));
+        this.denyColor = TextColor.fromHexString("#" + plugin.getConfig().getString("denycolour", "ff0000"));
     }
 
     @Override
@@ -73,7 +87,7 @@ public class PartyCommand implements CommandExecutor {
             case "leave":
                 handleLeave(player);
                 break;
-            case "list":
+            case "list", "info":
                 handleList(player);
                 break;
             case "race":
@@ -138,14 +152,15 @@ public class PartyCommand implements CommandExecutor {
         if (partyManager.invitePlayer(party, target)) {
             player.sendMessage("§aInvite sent to " + target.getName() + "!");
             Component inviteMessage = Component.text()
-                    .append(Component.text("You have been invited to join ", NamedTextColor.GREEN))
-                    .append(Component.text(player.getName() + "'s party!", NamedTextColor.GREEN))
+                    .append(Component.text("You have been invited to join ", primaryColor))
+                    .append(Component.text(player.getName(), secondaryColor))
+                    .append(Component.text("'s party!", primaryColor))
                     .append(Component.newline())
-                    .append(Component.text("         ", NamedTextColor.GRAY))
-                    .append(Component.text("[Accept]", NamedTextColor.GREEN, TextDecoration.BOLD)
+                    .append(Component.text("         "))
+                    .append(Component.text("[Accept]", acceptColor, TextDecoration.BOLD)
                             .clickEvent(ClickEvent.runCommand("/party accept")))
                     .append(Component.text("  "))
-                    .append(Component.text("[Decline]", NamedTextColor.RED, TextDecoration.BOLD)
+                    .append(Component.text("[Decline]", denyColor, TextDecoration.BOLD)
                             .clickEvent(ClickEvent.runCommand("/party decline")))
                     .append(Component.newline())
                     .append(Component.text("This invite will expire in " + plugin.getConfig().getInt("invitetimeout") + " seconds", NamedTextColor.GRAY))
@@ -234,17 +249,38 @@ public class PartyCommand implements CommandExecutor {
             return;
         }
 
-        player.sendMessage("§6=== Party Members ===");
         Player leader = player.getServer().getPlayer(party.getLeader());
-        player.sendMessage("§eLeader: §7" + (leader != null ? leader.getName() : "Offline"));
-        player.sendMessage("§eMembers: §7" + party.getMembers().size());
+
+        ComponentBuilder partyInfo = Component.text()
+                        .append(Component.text("=== ", secondaryColor))
+                        .append(Component.text("Party Members", primaryColor, TextDecoration.BOLD))
+                        .append(Component.text(" ===", secondaryColor))
+                        .append(Component.newline())
+                        .append(Component.text("Leader: " + leader.getName(), defaultColor))
+                        .append(Component.newline())
+                        .append(Component.newline())
+                        .append(Component.text("Members: " + party.getMembers().size(), defaultColor))
+                        .append(Component.newline())
+                        .append(Component.text("\uD83D\uDC51 ", secondaryColor))
+                        .append(Component.text(leader.getName(), primaryColor))
+                        .append(Component.newline());
+
         for (UUID memberUUID : party.getMembers()) {
             Player member = player.getServer().getPlayer(memberUUID);
-            if (member != null) {
-                String prefix = memberUUID.equals(party.getLeader()) ? "§f" : "§7";
-                player.sendMessage(prefix + "- " + member.getName());
-            }
+            if (member.getName().equals(leader.getName())) continue;
+            partyInfo.append(Component.text("- ", secondaryColor))
+                    .append(Component.text(member.getName(), defaultColor))
+                    .append(Component.newline());
         }
+
+        partyInfo.append(Component.newline())
+                        .append(Component.text("[Invite]", acceptColor, TextDecoration.BOLD)
+                                .clickEvent(ClickEvent.suggestCommand("/party invite ")))
+                        .append(Component.text(" "))
+                        .append(Component.text("[Leave]", denyColor, TextDecoration.BOLD)
+                                .clickEvent(ClickEvent.runCommand("/party leave")));
+
+        player.sendMessage(partyInfo.build());
     }
 
     private void handleRace(Player player, String[] args) {

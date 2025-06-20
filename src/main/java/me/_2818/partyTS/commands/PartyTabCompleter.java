@@ -39,6 +39,7 @@ public class PartyTabCompleter implements TabCompleter {
             completions.add("kick");
             completions.add("leave");
             completions.add("list");
+            completions.add("info");
             completions.add("race");
         } else if (args.length == 2) {
             // Second argument: player name (for invite and kick) or track name (for race)
