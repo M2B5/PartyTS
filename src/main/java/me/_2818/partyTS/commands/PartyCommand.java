@@ -3,6 +3,8 @@ package me._2818.partyTS.commands;
 import me._2818.partyTS.Party;
 import me._2818.partyTS.PartyManager;
 import me._2818.partyTS.PartyRaceManager;
+import me._2818.partyTS.messages.LanguageManager;
+import me._2818.partyTS.messages.Message;
 import me.makkuusen.timing.system.api.TimingSystemAPI;
 import me.makkuusen.timing.system.track.Track;
 import me.makkuusen.timing.system.track.locations.TrackLocation;
@@ -31,7 +33,7 @@ public class PartyCommand implements CommandExecutor {
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         if (!(sender instanceof Player)) {
-            sender.sendMessage("§cThis command can only be used by players!");
+            sender.sendMessage(Message.PLAYER_ONLY.asComponent());
             return true;
         }
 
@@ -48,7 +50,7 @@ public class PartyCommand implements CommandExecutor {
                 break;
             case "invite":
                 if (args.length < 2) {
-                    player.sendMessage("§cUsage: /party invite <player>");
+                    player.sendMessage(Message.ERROR_USAGE.asComponent("/party invite <player>"));
                     return true;
                 }
                 handleInvite(player, args[1]);
@@ -61,11 +63,11 @@ public class PartyCommand implements CommandExecutor {
                 break;
             case "kick":
                 if (args.length < 2) {
-                    player.sendMessage("§cUsage: /party kick <player>");
+                    player.sendMessage(Message.ERROR_USAGE.asComponent("/party kick <player>"));
                     return true;
                 }
                 if (args[1].equalsIgnoreCase(player.getName())) {
-                    player.sendMessage("§cYou cannot kick yourself!");
+                    player.sendMessage(Message.ERROR_CANNOT_KICK_SELF.asComponent());
                     return true;
                 }
                 handleKick(player, args[1]);
@@ -78,7 +80,7 @@ public class PartyCommand implements CommandExecutor {
                 break;
             case "race":
                 if (args.length < 2) {
-                    player.sendMessage("§cUsage: /party race <track> [laps] [pits]");
+                    player.sendMessage(Message.ERROR_USAGE.asComponent("/party race <track> [laps] [pits]"));
                     return true;
                 }
                 handleRace(player, args);
@@ -106,10 +108,10 @@ public class PartyCommand implements CommandExecutor {
     private void handleCreate(Player player) {
         Party party = partyManager.createParty(player);
         if (party == null) {
-            player.sendMessage("§cYou are already in a party!");
+            player.sendMessage(Message.PARTY_ALREADY_IN_ONE.asComponent());
             return;
         }
-        player.sendMessage("§aParty created successfully!");
+        player.sendMessage(Message.PARTY_CREATED.asComponent());
     }
 
     private void handleInvite(Player player, String targetName) {
@@ -118,28 +120,28 @@ public class PartyCommand implements CommandExecutor {
         if (party == null) {
             party = partyManager.createParty(player);
             if (party == null) {
-                player.sendMessage("§cFailed to create a party!");
+                player.sendMessage(Message.PARTY_CREATE_FAILED.asComponent());
                 return;
             }
-            player.sendMessage("§aParty created automatically!");
+            player.sendMessage(Message.PARTY_CREATED.asComponent());
         }
 
         Player target = player.getServer().getPlayer(targetName);
         if (target == null) {
-            player.sendMessage("§cPlayer not found!");
+            player.sendMessage(Message.ERROR_PLAYER_NOT_FOUND.asComponent());
             return;
         }
 
         if (partyManager.isOnInviteCooldown(player, target)) {
-            player.sendMessage("§cYou must wait " + partyManager.getInviteCooldownSeconds(player, target) + " seconds before inviting that player again.");
+            player.sendMessage(Message.INVITE_COOLDOWN.asComponent(partyManager.getInviteCooldownSeconds(player, target)));
             return;
         }
 
         if (partyManager.invitePlayer(party, target)) {
-            player.sendMessage("§aInvite sent to " + target.getName() + "!");
+            player.sendMessage(Message.INVITE_SENT.asComponent(target.getName()));
+            
             Component inviteMessage = Component.text()
-                    .append(Component.text("You have been invited to join ", NamedTextColor.GREEN))
-                    .append(Component.text(player.getName() + "'s party!", NamedTextColor.GREEN))
+                    .append(Message.INVITE_RECEIVED.asComponent(player.getName()))
                     .append(Component.newline())
                     .append(Component.text("         ", NamedTextColor.GRAY))
                     .append(Component.text("[Accept]", NamedTextColor.GREEN, TextDecoration.BOLD)
@@ -153,9 +155,9 @@ public class PartyCommand implements CommandExecutor {
             target.sendMessage(inviteMessage);
         } else {
             if (partyManager.hasPendingInvite(target)) {
-                player.sendMessage("§c" + target.getName() + " already has a pending invite!");
+                player.sendMessage(Message.INVITE_ALREADY_INVITED.asComponent(target.getName()));
             } else {
-                player.sendMessage("§c" + target.getName() + " is already in a party!");
+                player.sendMessage(Message.INVITE_ALREADY_IN_PARTY.asComponent(target.getName()));
             }
         }
     }
@@ -167,14 +169,14 @@ public class PartyCommand implements CommandExecutor {
             Party party = partyManager.getPlayerParty(player);
             Player inviter = inviterUUID != null ? Bukkit.getPlayer(inviterUUID) : null;
 
-            player.sendMessage("§aYou have joined the party!");
-            party.broadcastMessage("§a" + player.getName() + " has joined the party!");
+            player.sendMessage(Message.INVITE_ACCEPTED.asComponent());
+            party.broadcastMessage(Message.MEMBER_JOINED, player.getName());
 
             if (inviter != null && inviter.isOnline()) {
-                inviter.sendMessage("§a" + player.getName() + " has accepted your party invite!");
+                inviter.sendMessage(Message.INVITE_ACCEPTED_NOTIFICATION.asComponent(player.getName()));
             }
         } else {
-            player.sendMessage("§cYou don't have any valid party invites!");
+            player.sendMessage(Message.ERROR_NO_INVITE.asComponent());
         }
     }
 
@@ -184,65 +186,79 @@ public class PartyCommand implements CommandExecutor {
         if (partyManager.declineInvite(player)) {
             Player inviter = inviterUUID != null ? Bukkit.getPlayer(inviterUUID) : null;
 
-            player.sendMessage("§aYou have declined the party invite!");
+            player.sendMessage(Message.INVITE_DECLINED.asComponent());
             if (inviter != null && inviter.isOnline()) {
-                inviter.sendMessage("§c" + player.getName() + " has declined your party invite!");
+                inviter.sendMessage(Message.INVITE_DECLINED_NOTIFICATION.asComponent(player.getName()));
             }
         } else {
-            player.sendMessage("§cYou don't have any valid party invites!");
+            player.sendMessage(Message.ERROR_NO_INVITE.asComponent());
         }
     }
 
     private void handleKick(Player player, String targetName) {
         Party party = partyManager.getPlayerParty(player);
         if (party == null) {
-            player.sendMessage("§cYou are not in a party!");
+            player.sendMessage(Message.ERROR_NOT_IN_PARTY.asComponent());
             return;
         }
 
         if (!party.isLeader(player.getUniqueId())) {
-            player.sendMessage("§cOnly the party leader can kick players!");
+            player.sendMessage(Message.ERROR_NOT_LEADER.asComponent());
             return;
         }
 
         Player target = player.getServer().getPlayer(targetName);
         if (target == null) {
-            player.sendMessage("§cPlayer not found!");
+            player.sendMessage(Message.ERROR_PLAYER_NOT_FOUND.asComponent());
             return;
         }
 
         if (partyManager.kickPlayer(party, player, target)) {
-            player.sendMessage("§aKicked " + target.getName() + " from the party!");
-            target.sendMessage("§cYou have been kicked from the party!");
+            player.sendMessage(Message.MEMBER_KICKED_OTHER.asComponent(target.getName()));
+            target.sendMessage(Message.MEMBER_KICKED.asComponent());
         } else {
-            player.sendMessage("§cCould not kick " + target.getName() + " from the party!");
+            player.sendMessage(Message.ERROR_PLAYER_NOT_FOUND.asComponent());
         }
     }
 
     private void handleLeave(Player player) {
         if (partyManager.leaveParty(player)) {
-            player.sendMessage("§aYou have left the party!");
+            player.sendMessage(Message.MEMBER_LEFT.asComponent(player.getName()));
         } else {
-            player.sendMessage("§cYou are not in a party!");
+            player.sendMessage(Message.ERROR_NOT_IN_PARTY.asComponent());
         }
     }
 
     private void handleList(Player player) {
         Party party = partyManager.getPlayerParty(player);
         if (party == null) {
-            player.sendMessage("§cYou are not in a party!");
+            player.sendMessage(Message.ERROR_NOT_IN_PARTY.asComponent());
             return;
         }
 
-        player.sendMessage("§6=== Party Members ===");
-        Player leader = player.getServer().getPlayer(party.getLeader());
-        player.sendMessage("§eLeader: §7" + (leader != null ? leader.getName() : "Offline"));
-        player.sendMessage("§eMembers: §7" + party.getMembers().size());
+        Component message = Component.text()
+                .append(Component.text("=== Party Members ===", NamedTextColor.GOLD))
+                .append(Component.newline())
+                .append(Component.text("Leader: ", NamedTextColor.YELLOW))
+                .append(Component.text(
+                        party.getLeader().equals(player.getUniqueId()) ? "You" : 
+                        Bukkit.getOfflinePlayer(party.getLeader()).getName(),
+                        NamedTextColor.WHITE))
+                .append(Component.newline())
+                .append(Component.text("Members (" + party.getMembers().size() + "):", NamedTextColor.YELLOW))
+                .build();
+        
+        player.sendMessage(message);
+        
         for (UUID memberUUID : party.getMembers()) {
-            Player member = player.getServer().getPlayer(memberUUID);
-            if (member != null) {
-                String prefix = memberUUID.equals(party.getLeader()) ? "§f" : "§7";
-                player.sendMessage(prefix + "- " + member.getName());
+            if (!memberUUID.equals(party.getLeader())) {  // Skip leader as they're already listed
+                String memberName = Bukkit.getOfflinePlayer(memberUUID).getName();
+                if (memberName != null) {
+                    player.sendMessage(Component.text("- ", NamedTextColor.GRAY)
+                            .append(Component.text(memberName, 
+                                    memberUUID.equals(player.getUniqueId()) ? 
+                                            NamedTextColor.GREEN : NamedTextColor.GRAY)));
+                }
             }
         }
     }

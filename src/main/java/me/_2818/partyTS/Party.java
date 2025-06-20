@@ -1,5 +1,8 @@
 package me._2818.partyTS;
 
+import me._2818.partyTS.messages.LanguageManager;
+import me._2818.partyTS.messages.Message;
+import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 
@@ -41,6 +44,16 @@ public class Party {
         return members.remove(playerUUID);
     }
 
+    public void broadcastMessage(Message message, Object... args) {
+        Component component = message.asComponent(args);
+        for (UUID memberUUID : members) {
+            Player player = Bukkit.getPlayer(memberUUID);
+            if (player != null && player.isOnline()) {
+                player.sendMessage(component);
+            }
+        }
+    }
+    
     public void broadcastMessage(String message) {
         for (UUID memberUUID : members) {
             Player player = Bukkit.getPlayer(memberUUID);
@@ -49,4 +62,4 @@ public class Party {
             }
         }
     }
-} 
+}

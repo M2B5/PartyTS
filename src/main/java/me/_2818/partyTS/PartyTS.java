@@ -4,6 +4,7 @@ import me._2818.partyTS.commands.PartyCommand;
 import me._2818.partyTS.commands.PartyTabCompleter;
 import me._2818.partyTS.listeners.PartyListener;
 import me._2818.partyTS.listeners.PartyRaceListener;
+import me._2818.partyTS.messages.LanguageManager;
 import org.bukkit.plugin.java.JavaPlugin;
 
 public final class PartyTS extends JavaPlugin {
@@ -13,7 +14,9 @@ public final class PartyTS extends JavaPlugin {
     @Override
     public void onEnable() {
         this.saveDefaultConfig();
-
+        
+        LanguageManager.initialize(this);
+        
         partyManager = new PartyManager(this);
         partyRaceManager = new PartyRaceManager(partyManager, this);
 
