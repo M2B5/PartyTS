@@ -35,8 +35,8 @@ public class PartyCommand implements CommandExecutor {
         this.partyManager = partyManager;
         this.plugin = plugin;
 
-        this.primaryColor = TextColor.fromHexString("#" + plugin.getConfig().getString("primarycolour", "327eee"));
-        this.secondaryColor = TextColor.fromHexString("#" + plugin.getConfig().getString("secondarycolour", "f64040"));
+        this.primaryColor = TextColor.fromHexString("#" + plugin.getConfig().getString("primarycolour", "0260C6"));
+        this.secondaryColor = TextColor.fromHexString("#" + plugin.getConfig().getString("secondarycolour", "4cafff"));
         this.defaultColor = TextColor.fromHexString("#" + plugin.getConfig().getString("defaultcolour", "ffffff"));
         this.acceptColor = TextColor.fromHexString("#" + plugin.getConfig().getString("acceptcolour", "23ff00"));
         this.denyColor = TextColor.fromHexString("#" + plugin.getConfig().getString("denycolour", "ff0000"));
@@ -163,7 +163,7 @@ public class PartyCommand implements CommandExecutor {
                     .append(Component.text("[Decline]", denyColor, TextDecoration.BOLD)
                             .clickEvent(ClickEvent.runCommand("/party decline")))
                     .append(Component.newline())
-                    .append(Component.text("This invite will expire in " + plugin.getConfig().getInt("invitetimeout") + " seconds", NamedTextColor.GRAY))
+                    .append(Component.text("This invite will expire in " + plugin.getConfig().getInt("invitetimeout", 30) + " seconds", NamedTextColor.GRAY))
                     .build();
             target.sendMessage(inviteMessage);
         } else {

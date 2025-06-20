@@ -82,7 +82,7 @@ public class PartyRaceManager {
             finalHeat.startCountdown(10);
         }, 20L);
 
-        int maxRaceTime = plugin.getConfig().getInt("maxracetime") * 20; // Corrected config key
+        int maxRaceTime = plugin.getConfig().getInt("maxracetime", 3600) * 20;
 
         Bukkit.getScheduler().runTaskLater(plugin, () -> {
             endPartyRace(finalHeat);

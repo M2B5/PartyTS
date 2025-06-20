@@ -23,6 +23,6 @@ public class PartyInvite {
     }
 
     public boolean isExpired() {
-        return (System.currentTimeMillis() - timestamp) > (plugin.getConfig().getInt("invitetimeout") * 1000L);
+        return (System.currentTimeMillis() - timestamp) > (plugin.getConfig().getInt("invitetimeout", 30) * 1000L);
     }
 } 

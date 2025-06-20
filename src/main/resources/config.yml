@@ -11,8 +11,8 @@ maxracetime: 3600
 invitetimeout: 30
 
 # Colours
-primarycolour: '327eee'
-secondarycolour: 'f64040'
+primarycolour: '0260C6'
+secondarycolour: '4cafff'
 defaultcolour: 'ffffff'
 acceptcolour: '23ff00'
 denycolour: 'ff0000'
