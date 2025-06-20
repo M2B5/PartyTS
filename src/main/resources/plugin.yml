@@ -2,6 +2,7 @@ name: PartyTS
 version: 1.0
 main: me._2818.partyTS.PartyTS
 api-version: 1.21
+depend: [TimingSystem]
 commands:
   party:
     description: Party management commands

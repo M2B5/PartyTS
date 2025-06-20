@@ -37,7 +37,6 @@ public class PartyRaceCommand implements CommandExecutor {
 
         var possibleTrack = TimingSystemAPI.getTrack(args[0]);
 
-
         if (possibleTrack.isEmpty()) {
             player.sendMessage("§cTrack not found!");
             return true;

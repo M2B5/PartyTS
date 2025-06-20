@@ -5,11 +5,11 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>me._2818</groupId>
-    <artifactId>partyts</artifactId>
+    <artifactId>PartyTS</artifactId>
     <version>1.0-SNAPSHOT</version>
     <packaging>jar</packaging>
 
-    <name>partyts</name>
+    <name>PartyTS</name>
 
     <properties>
         <java.version>21</java.version>
@@ -75,7 +75,13 @@
         <dependency>
             <groupId>com.github.FrostHexABG</groupId>
             <artifactId>TimingSystem</artifactId>
-            <version>2.3-RC1</version>
+            <version>2.3</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <version>1.18.36</version>
             <scope>provided</scope>
         </dependency>
     </dependencies>
