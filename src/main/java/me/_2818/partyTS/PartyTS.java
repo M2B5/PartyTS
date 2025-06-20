@@ -29,6 +29,9 @@ public final class PartyTS extends JavaPlugin {
 
     @Override
     public void onDisable() {
+        if (partyRaceManager != null) {
+            partyRaceManager.cleanupRaces();
+        }
         if (partyManager != null) {
             partyManager.disable();
         }

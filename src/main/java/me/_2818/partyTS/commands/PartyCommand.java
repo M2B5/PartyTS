@@ -6,6 +6,10 @@ import me._2818.partyTS.PartyRaceManager;
 import me.makkuusen.timing.system.api.TimingSystemAPI;
 import me.makkuusen.timing.system.track.Track;
 import me.makkuusen.timing.system.track.locations.TrackLocation;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.event.ClickEvent;
+import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
 import org.bukkit.plugin.Plugin;
@@ -111,7 +115,6 @@ public class PartyCommand implements CommandExecutor {
     private void handleInvite(Player player, String targetName) {
         Party party = partyManager.getPlayerParty(player);
 
-        // If player is not in a party, create one automatically
         if (party == null) {
             party = partyManager.createParty(player);
             if (party == null) {
@@ -128,10 +131,20 @@ public class PartyCommand implements CommandExecutor {
         }
 
         if (partyManager.invitePlayer(party, target)) {
-            player.sendMessage("§aInvited " + target.getName() + " to your party!");
-            target.sendMessage("§aYou have been invited to join " + player.getName() + "'s party!");
-            target.sendMessage("§eUse /party accept to join or /party decline to decline the invite");
-            target.sendMessage("§7This invite will expire in 30 seconds");
+            Component inviteMessage = Component.text()
+                    .append(Component.text("You have been invited to join ", NamedTextColor.GREEN))
+                    .append(Component.text(player.getName() + "'s party!", NamedTextColor.GREEN))
+                    .append(Component.newline())
+                    .append(Component.text("         ", NamedTextColor.GRAY))
+                    .append(Component.text("[Accept]", NamedTextColor.GREEN, TextDecoration.BOLD)
+                            .clickEvent(ClickEvent.runCommand("/party accept")))
+                    .append(Component.text("  "))
+                    .append(Component.text("[Decline]", NamedTextColor.RED, TextDecoration.BOLD)
+                            .clickEvent(ClickEvent.runCommand("/party decline")))
+                    .append(Component.newline())
+                    .append(Component.text("This invite will expire in 30 seconds", NamedTextColor.GRAY))
+                    .build();
+            target.sendMessage(inviteMessage);
         } else {
             if (partyManager.hasPendingInvite(target)) {
                 player.sendMessage("§c" + target.getName() + " already has a pending invite!");

@@ -9,7 +9,9 @@ import me.makkuusen.timing.system.round.Round;
 import me.makkuusen.timing.system.round.RoundType;
 import me.makkuusen.timing.system.track.Track;
 
+import java.util.HashSet;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
 import org.bukkit.Bukkit;
@@ -19,6 +21,7 @@ import org.bukkit.plugin.Plugin;
 public class PartyRaceManager {
     private final PartyManager partyManager;
     private final Plugin plugin;
+    private final Set<Heat> activePartyHeats = new HashSet<>();
 
     public PartyRaceManager(PartyManager partyManager, Plugin plugin) {
         this.partyManager = partyManager;
@@ -79,16 +82,20 @@ public class PartyRaceManager {
             finalHeat.startCountdown(10);
         }, 20L);
 
-        int maxRaceTime = plugin.getConfig().getInt("maxRaceTime") * 20;
+        int maxRaceTime = plugin.getConfig().getInt("maxracetime") * 20; // Corrected config key
 
         Bukkit.getScheduler().runTaskLater(plugin, () -> {
             endPartyRace(finalHeat);
         }, maxRaceTime);
 
+        activePartyHeats.add(heat);
+
         return true;
     }
 
     public void endPartyRace(Heat heat) {
+        activePartyHeats.remove(heat);
+
         Round round = heat.getRound();
         Event event = round.getEvent();
 
@@ -105,5 +112,25 @@ public class PartyRaceManager {
         Bukkit.getScheduler().runTaskLater(plugin, () -> {
             EventDatabase.removeEventHard(event);
         }, 60L);
+    }
+
+    public void cleanupRaces() {
+        plugin.getLogger().info("Cleaning up " + activePartyHeats.size() + " active party race(s)...");
+        for (Heat heat : new HashSet<>(activePartyHeats)) {
+            try {
+                plugin.getLogger().info("Force-ending party race: " + heat.getRound().getEvent().getDisplayName());
+                Round round = heat.getRound();
+                Event event = round.getEvent();
+
+                heat.finishHeat();
+                round.finish(event);
+                event.finish();
+                EventDatabase.removeEventHard(event);
+            } catch (Exception e) {
+                plugin.getLogger().warning("Failed to cleanup a party race: " + e.getMessage());
+            }
+        }
+        activePartyHeats.clear();
+        plugin.getLogger().info("Party race cleanup complete.");
     }
 }
