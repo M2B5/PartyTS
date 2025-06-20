@@ -5,7 +5,6 @@ import me.makkuusen.timing.system.database.EventDatabase;
 import me.makkuusen.timing.system.event.Event;
 import me.makkuusen.timing.system.heat.Heat;
 import me.makkuusen.timing.system.heat.HeatState;
-import me.makkuusen.timing.system.participant.Driver;
 import me.makkuusen.timing.system.round.Round;
 import me.makkuusen.timing.system.round.RoundType;
 import me.makkuusen.timing.system.track.Track;
@@ -14,7 +13,6 @@ import java.util.Optional;
 import java.util.UUID;
 
 import org.bukkit.Bukkit;
-import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
 
@@ -75,7 +73,7 @@ public class PartyRaceManager {
         }
 
         CommandHeat.onSortByRandom(player, heat);
-        
+
         final Heat finalHeat = heat;
         Bukkit.getScheduler().runTaskLater(plugin, () -> {
             finalHeat.startCountdown(10);
@@ -84,18 +82,13 @@ public class PartyRaceManager {
         int maxRaceTime = plugin.getConfig().getInt("maxRaceTime") * 20;
 
         Bukkit.getScheduler().runTaskLater(plugin, () -> {
-            endPartyRace(player);
+            endPartyRace(finalHeat);
         }, maxRaceTime);
 
         return true;
     }
 
-    public void endPartyRace(Player player) {
-        var maybeDriver = EventDatabase.getDriverFromRunningHeat(player.getUniqueId());
-        if(maybeDriver.isEmpty()) return;
-        
-        Driver driver = maybeDriver.get();
-        Heat heat = driver.getHeat();
+    public void endPartyRace(Heat heat) {
         Round round = heat.getRound();
         Event event = round.getEvent();
 

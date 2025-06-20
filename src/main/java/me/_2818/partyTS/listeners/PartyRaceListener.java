@@ -32,7 +32,7 @@ public class PartyRaceListener implements Listener {
                 .count();
 
         if (event.getDriver().getPosition() == event.getDriver().getHeat().getDrivers().size() - offlineCount) {
-            partyRaceManager.endPartyRace(event.getDriver().getTPlayer().getPlayer());
+            partyRaceManager.endPartyRace(event.getDriver().getHeat());
             return;
         }
 
@@ -45,7 +45,7 @@ public class PartyRaceListener implements Listener {
             }
 
             Bukkit.getScheduler().runTaskLater(plugin, () -> {
-                partyRaceManager.endPartyRace(event.getDriver().getTPlayer().getPlayer());
+                partyRaceManager.endPartyRace(event.getDriver().getHeat());
             }, 600L);
         }
     }
