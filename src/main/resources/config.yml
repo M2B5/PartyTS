@@ -1,0 +1,15 @@
+# Maximum laps for a party race
+maxlaps: 100
+
+# Time in seconds after first player finishes to end the race
+endraceafterwin: 30
+
+# Time in seconds after race starts to end the race
+maxracetime: 3600
+
+# Colours
+primarycolour: '327eee'
+secondarycolour: 'f64040'
+defaultcolour: 'ffffff'
+acceptcolour: '23ff00'
+denycolour: 'ff0000'

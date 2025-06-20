@@ -1,9 +1,14 @@
 package me._2818.partyTS.commands;
 
-import me._2818.partyTS.PartyManager;
 import me._2818.partyTS.Party;
+import me._2818.partyTS.PartyManager;
+import me._2818.partyTS.PartyRaceManager;
+import me.makkuusen.timing.system.api.TimingSystemAPI;
+import me.makkuusen.timing.system.track.Track;
+import me.makkuusen.timing.system.track.locations.TrackLocation;
 import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
+import org.bukkit.plugin.Plugin;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
@@ -12,9 +17,11 @@ import java.util.UUID;
 
 public class PartyCommand implements CommandExecutor {
     private final PartyManager partyManager;
+    private final Plugin plugin;
 
-    public PartyCommand(PartyManager partyManager) {
+    public PartyCommand(PartyManager partyManager, Plugin plugin) {
         this.partyManager = partyManager;
+        this.plugin = plugin;
     }
 
     @Override
@@ -53,6 +60,10 @@ public class PartyCommand implements CommandExecutor {
                     player.sendMessage("§cUsage: /party kick <player>");
                     return true;
                 }
+                if (args[1].equalsIgnoreCase(player.getName())) {
+                    player.sendMessage("§cYou cannot kick yourself!");
+                    return true;
+                }
                 handleKick(player, args[1]);
                 break;
             case "leave":
@@ -60,6 +71,13 @@ public class PartyCommand implements CommandExecutor {
                 break;
             case "list":
                 handleList(player);
+                break;
+            case "race":
+                if (args.length < 2) {
+                    player.sendMessage("§cUsage: /party race <track> [laps] [pits]");
+                    return true;
+                }
+                handleRace(player, args);
                 break;
             default:
                 sendHelp(player);
@@ -78,6 +96,7 @@ public class PartyCommand implements CommandExecutor {
         player.sendMessage("§e/party kick <player> §7- Kick a player from your party");
         player.sendMessage("§e/party leave §7- Leave your current party");
         player.sendMessage("§e/party list §7- List party members");
+        player.sendMessage("§e/party race <track> §7- Start a party race");
     }
 
     private void handleCreate(Player player) {
@@ -91,7 +110,7 @@ public class PartyCommand implements CommandExecutor {
 
     private void handleInvite(Player player, String targetName) {
         Party party = partyManager.getPlayerParty(player);
-        
+
         // If player is not in a party, create one automatically
         if (party == null) {
             party = partyManager.createParty(player);
@@ -127,10 +146,10 @@ public class PartyCommand implements CommandExecutor {
             Party party = partyManager.getPlayerParty(player);
             UUID inviterUUID = partyManager.getInviter(player);
             Player inviter = inviterUUID != null ? Bukkit.getPlayer(inviterUUID) : null;
-            
+
             player.sendMessage("§aYou have joined the party!");
             party.broadcastMessage("§a" + player.getName() + " has joined the party!");
-            
+
             if (inviter != null && inviter.isOnline()) {
                 inviter.sendMessage("§a" + player.getName() + " has accepted your party invite!");
             }
@@ -143,7 +162,7 @@ public class PartyCommand implements CommandExecutor {
         if (partyManager.declineInvite(player)) {
             UUID inviterUUID = partyManager.getInviter(player);
             Player inviter = inviterUUID != null ? Bukkit.getPlayer(inviterUUID) : null;
-            
+
             player.sendMessage("§aYou have declined the party invite!");
             if (inviter != null && inviter.isOnline()) {
                 inviter.sendMessage("§c" + player.getName() + " has declined your party invite!");
@@ -171,7 +190,7 @@ public class PartyCommand implements CommandExecutor {
             return;
         }
 
-        if (partyManager.kickPlayer(party, target)) {
+        if (partyManager.kickPlayer(party, player, target)) {
             player.sendMessage("§aKicked " + target.getName() + " from the party!");
             target.sendMessage("§cYou have been kicked from the party!");
         } else {
@@ -206,4 +225,62 @@ public class PartyCommand implements CommandExecutor {
             }
         }
     }
-} 
+
+    private void handleRace(Player player, String[] args) {
+        Party playerParty = partyManager.getPlayerParty(player);
+
+        if (playerParty == null) {
+            player.sendMessage("§cYou are not in a party!");
+            return;
+        }
+
+        if (!playerParty.getLeader().equals(player.getUniqueId())) {
+            player.sendMessage("§cOnly the party leader can start a race!");
+            return;
+        }
+
+        var possibleTrack = TimingSystemAPI.getTrack(args[1]);
+
+        if (possibleTrack.isEmpty()) {
+            player.sendMessage("§cTrack not found!");
+            return;
+        }
+
+        Track t = possibleTrack.get();
+
+        if (!t.isOpen()) {
+            player.sendMessage("§cTrack is not open!");
+            return;
+        }
+
+        if (t.getTrackLocations().getLocations(TrackLocation.Type.GRID).size() < playerParty.getMembers().size()) {
+            player.sendMessage("§cNot enough grids!");
+            return;
+        }
+
+        int laps = 3;
+
+        if (args.length >= 3) {
+            try {
+                laps = Math.min(Integer.parseInt(args[2]), plugin.getConfig().getInt("maxlaps", 10));
+            } catch (NumberFormatException e) {
+                player.sendMessage("§cInvalid number of laps!");
+                return;
+            }
+        }
+
+        int pits = 0;
+
+        if (args.length >= 4) {
+            try {
+                pits = Math.min(Integer.parseInt(args[3]), Math.max(Math.abs(laps - 2), 0));
+            } catch (NumberFormatException e) {
+                player.sendMessage("§cInvalid number of pits!");
+                return;
+            }
+        }
+
+        PartyRaceManager partyRaceManager = new PartyRaceManager(partyManager, plugin);
+        partyRaceManager.startPartyRace(player, t, laps, pits);
+    }
+}

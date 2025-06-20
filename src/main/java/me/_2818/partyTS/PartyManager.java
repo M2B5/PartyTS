@@ -100,13 +100,13 @@ public class PartyManager {
         return invite != null && !invite.isExpired();
     }
 
-    public boolean kickPlayer(Party party, Player player) {
+    public boolean kickPlayer(Party party, Player player, Player target) {
         if (!party.isLeader(player.getUniqueId())) {
             return false;
         }
 
-        if (party.removeMember(player.getUniqueId())) {
-            playerParties.remove(player.getUniqueId());
+        if (party.removeMember(target.getUniqueId())) {
+            playerParties.remove(target.getUniqueId());
             return true;
         }
         return false;

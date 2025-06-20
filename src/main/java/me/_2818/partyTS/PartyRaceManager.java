@@ -14,6 +14,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 import org.bukkit.Bukkit;
+import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
 
@@ -80,9 +81,11 @@ public class PartyRaceManager {
             finalHeat.startCountdown(10);
         }, 20L);
 
+        int maxRaceTime = plugin.getConfig().getInt("maxRaceTime") * 20;
+
         Bukkit.getScheduler().runTaskLater(plugin, () -> {
             endPartyRace(player);
-        }, 36000L);
+        }, maxRaceTime);
 
         return true;
     }

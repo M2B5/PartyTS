@@ -2,6 +2,8 @@ package me._2818.partyTS.commands;
 
 import me._2818.partyTS.PartyManager;
 import me._2818.partyTS.Party;
+import me.makkuusen.timing.system.api.TimingSystemAPI;
+import me.makkuusen.timing.system.track.Track;
 import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
@@ -11,6 +13,7 @@ import org.bukkit.entity.Player;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 public class PartyTabCompleter implements TabCompleter {
     private final PartyManager partyManager;
@@ -36,8 +39,9 @@ public class PartyTabCompleter implements TabCompleter {
             completions.add("kick");
             completions.add("leave");
             completions.add("list");
+            completions.add("race");
         } else if (args.length == 2) {
-            // Second argument: player name (for invite and kick)
+            // Second argument: player name (for invite and kick) or track name (for race)
             switch (args[0].toLowerCase()) {
                 case "invite":
                     // Only show online players not in a party
@@ -61,7 +65,18 @@ public class PartyTabCompleter implements TabCompleter {
                         }
                     }
                     break;
+                case "race":
+                    // Show available tracks
+                    return TimingSystemAPI.getTracks().stream()
+                            .filter(Track::isOpen)
+                            .map(Track::getCommandName)
+                            .filter(name -> name.toLowerCase().startsWith(args[1].toLowerCase()))
+                            .collect(Collectors.toList());
             }
+        } else if (args.length == 3 && args[0].equalsIgnoreCase("race")) {
+            completions.add("laps");
+        } else if (args.length == 4 && args[0].equalsIgnoreCase("race")) {
+            completions.add("pits");
         }
 
         if (!args[args.length - 1].isEmpty()) {
