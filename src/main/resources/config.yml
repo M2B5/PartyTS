@@ -7,6 +7,9 @@ endraceafterwin: 30
 # Time in seconds after race starts to end the race
 maxracetime: 3600
 
+# Delay in seconds between sending invites to the same player, time in seconds before an invitation times out.
+invitetimeout: 30
+
 # Colours
 primarycolour: '327eee'
 secondarycolour: 'f64040'

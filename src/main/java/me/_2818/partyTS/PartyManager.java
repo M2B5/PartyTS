@@ -14,11 +14,14 @@ public class PartyManager {
     private final Map<UUID, Party> playerParties;
     private final Map<UUID, PartyInvite> pendingInvites;
     private BukkitTask cleanupTask;
+    private final Plugin plugin;
+
 
     public PartyManager(Plugin plugin) {
         this.leaderParties = new HashMap<>();
         this.playerParties = new HashMap<>();
         this.pendingInvites = new HashMap<>();
+        this.plugin = plugin;
         
         // Start cleanup task
         this.cleanupTask = Bukkit.getScheduler().runTaskTimer(plugin, this::cleanupExpiredInvites, 20L, 20L);
@@ -77,7 +80,7 @@ public class PartyManager {
             }
         }
 
-        pendingInvites.put(player.getUniqueId(), new PartyInvite(party, party.getLeader()));
+        pendingInvites.put(player.getUniqueId(), new PartyInvite(party, party.getLeader(), plugin));
         return true;
     }
 
