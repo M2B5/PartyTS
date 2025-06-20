@@ -106,15 +106,40 @@ public class PartyCommand implements CommandExecutor {
     }
 
     private void sendHelp(Player player) {
-        player.sendMessage("§6=== Party Commands ===");
-        player.sendMessage("§e/party create §7- Create a new party");
-        player.sendMessage("§e/party invite <player> §7- Invite a player to your party");
-        player.sendMessage("§e/party accept §7- Accept a party invite");
-        player.sendMessage("§e/party decline §7- Decline a party invite");
-        player.sendMessage("§e/party kick <player> §7- Kick a player from your party");
-        player.sendMessage("§e/party leave §7- Leave your current party");
-        player.sendMessage("§e/party list §7- List party members");
-        player.sendMessage("§e/party race <track> §7- Start a party race");
+        Component helpMessage = Component.text()
+                .append(Component.text("=== ", secondaryColor))
+                .append(Component.text("Party Commands", primaryColor))
+                .append(Component.text(" ===", secondaryColor))
+                .append(Component.newline())
+                .append(Component.text("/party create ", secondaryColor))
+                .append(Component.text("- Create a new party", defaultColor))
+                .append(Component.newline())
+                .append(Component.text("/party invite ", secondaryColor))
+                .append(Component.text("- Invite a player to your party", defaultColor))
+                .append(Component.newline())
+                .append(Component.text("/party accept ", secondaryColor))
+                .append(Component.text("- Accept a party invite", defaultColor))
+                .append(Component.newline())
+                .append(Component.text("/party decline ", secondaryColor))
+                .append(Component.text("- Decline a party invite", defaultColor))
+                .append(Component.newline())
+                .append(Component.text("/party kick ", secondaryColor))
+                .append(Component.text("- Kick a player from your party", defaultColor))
+                .append(Component.newline())
+                .append(Component.text("/party leave ", secondaryColor))
+                .append(Component.text("- Leave your current party", defaultColor))
+                .append(Component.newline())
+                .append(Component.text("/party list ", secondaryColor))
+                .append(Component.text("- List party members", defaultColor))
+                .append(Component.newline())
+                .append(Component.text("/party info ", secondaryColor))
+                .append(Component.text("- List party members", defaultColor))
+                .append(Component.newline())
+                .append(Component.text("/party race ", secondaryColor))
+                .append(Component.text("- Start a party race", defaultColor))
+                        .build();
+
+        player.sendMessage(helpMessage);
     }
 
     private void handleCreate(Player player) {
