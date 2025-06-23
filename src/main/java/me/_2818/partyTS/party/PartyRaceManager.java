@@ -1,4 +1,4 @@
-package me._2818.partyTS;
+package me._2818.partyTS.party;
 
 import me.makkuusen.timing.system.commands.CommandHeat;
 import me.makkuusen.timing.system.database.EventDatabase;
@@ -105,9 +105,7 @@ public class PartyRaceManager {
             round.finish(event);
         }, 20L);
 
-        Bukkit.getScheduler().runTaskLater(plugin, () -> {
-            event.finish();
-        }, 40L);
+        Bukkit.getScheduler().runTaskLater(plugin, event::finish, 40L);
 
         Bukkit.getScheduler().runTaskLater(plugin, () -> {
             EventDatabase.removeEventHard(event);

@@ -1,7 +1,6 @@
 package me._2818.partyTS.listeners;
 
-import me._2818.partyTS.Party;
-import me._2818.partyTS.PartyManager;
+import me._2818.partyTS.party.PartyManager;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;

@@ -1,4 +1,4 @@
-package me._2818.partyTS;
+package me._2818.partyTS.party;
 
 import lombok.Getter;
 import org.bukkit.plugin.Plugin;

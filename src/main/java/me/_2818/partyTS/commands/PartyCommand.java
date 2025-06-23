@@ -1,8 +1,8 @@
 package me._2818.partyTS.commands;
 
-import me._2818.partyTS.Party;
-import me._2818.partyTS.PartyManager;
-import me._2818.partyTS.PartyRaceManager;
+import me._2818.partyTS.party.Party;
+import me._2818.partyTS.party.PartyManager;
+import me._2818.partyTS.party.PartyRaceManager;
 import me.makkuusen.timing.system.api.TimingSystemAPI;
 import me.makkuusen.timing.system.track.Track;
 import me.makkuusen.timing.system.track.locations.TrackLocation;

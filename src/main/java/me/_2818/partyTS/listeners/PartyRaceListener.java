@@ -1,16 +1,14 @@
 package me._2818.partyTS.listeners;
 
-import me._2818.partyTS.Party;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Listener;
 import org.bukkit.event.EventHandler;
-import me._2818.partyTS.PartyManager;
-import me._2818.partyTS.PartyRaceManager;
+import me._2818.partyTS.party.PartyManager;
+import me._2818.partyTS.party.PartyRaceManager;
 import me.makkuusen.timing.system.api.events.driver.DriverFinishHeatEvent;
 import me.makkuusen.timing.system.participant.DriverState;
 
 import org.bukkit.Bukkit;
-import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.plugin.Plugin;
 import java.util.UUID;
 

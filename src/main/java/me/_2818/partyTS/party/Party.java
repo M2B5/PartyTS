@@ -1,5 +1,6 @@
-package me._2818.partyTS;
+package me._2818.partyTS.party;
 
+import lombok.Getter;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 
@@ -8,6 +9,7 @@ import java.util.Set;
 import java.util.UUID;
 
 public class Party {
+    @Getter
     private final UUID leader;
     private final Set<UUID> members;
 
@@ -15,10 +17,6 @@ public class Party {
         this.leader = leader;
         this.members = new HashSet<>();
         this.members.add(leader);
-    }
-
-    public UUID getLeader() {
-        return leader;
     }
 
     public Set<UUID> getMembers() {
