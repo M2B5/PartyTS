@@ -1,6 +1,6 @@
 # PartyTS
 
-PartyTS is a plugin for PaperMC servers that enhances the [TimingSystem](https://www.spigotmc.org/resources/timingsystem.96777/) plugin by adding social racing features. It allows players to create parties to race together or challenge other players to 1v1 duels on your server's tracks.
+PartyTS is a plugin for PaperMC servers that enhances the [TimingSystem](https://github.com/FrosthexABG/TimingSystem) plugin by adding social racing features. It allows players to create parties to race together or challenge other players to 1v1 duels on your server's tracks.
 
 ## Features
 
