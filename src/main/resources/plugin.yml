@@ -8,7 +8,7 @@ commands:
     description: Party management commands
     usage: /<command> [create|invite|kick|leave|list]
     aliases: [p]
-  partyrace:
-    description: Party race commands
-    usage: /<command> [create|finish]
-    aliases: [pr]
+  duel:
+    description: Duel another player in a 1v1 race
+    usage: /<command> [player] [laps] [pits]
+    aliases: [d]

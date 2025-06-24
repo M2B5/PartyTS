@@ -25,26 +25,32 @@ public class PartyRaceListener implements Listener {
 
     @EventHandler
     public void onPlayerFinish(DriverFinishHeatEvent event) {
+        if (!partyRaceManager.getActivePartyHeats().contains(event.getDriver().getHeat())) {
+            return;
+        }
+
         long offlineCount = event.getDriver().getHeat().getDrivers().values().stream()
                 .filter(driver -> driver.getTPlayer().getPlayer() == null && driver.getState() != DriverState.FINISHED)
                 .count();
 
         if (event.getDriver().getPosition() == event.getDriver().getHeat().getDrivers().size() - offlineCount) {
-            partyRaceManager.endPartyRace(event.getDriver().getHeat());
+            event.getDriver().getHeat().finishHeat();
             return;
         }
 
         if (event.getDriver().getPosition() == 1) {
+            int endRaceAfterWinTime = plugin.getConfig().getInt("endraceafterwin", 30);
+
             for (UUID memberUUID : partyManager.getPlayerParty(event.getDriver().getTPlayer().getPlayer()).getMembers()) {
                 Player member = Bukkit.getPlayer(memberUUID);
                 if (member != null) {
-                    member.sendMessage("§aA player finished the race, you have 30s to finish!");
+                    member.sendMessage("§aA player finished the race, you have " + endRaceAfterWinTime + "s to finish!");
                 }
             }
 
             Bukkit.getScheduler().runTaskLater(plugin, () -> {
-                partyRaceManager.endPartyRace(event.getDriver().getHeat());
-            }, 600L);
+                event.getDriver().getHeat().finishHeat();
+            }, endRaceAfterWinTime * 20L); // Convert seconds to ticks
         }
     }
 }

@@ -3,11 +3,13 @@ package me._2818.partyTS.commands;
 import me._2818.partyTS.party.Party;
 import me._2818.partyTS.party.PartyManager;
 import me._2818.partyTS.party.PartyRaceManager;
+import me._2818.partyTS.utils.FontInfo;
 import me.makkuusen.timing.system.api.TimingSystemAPI;
 import me.makkuusen.timing.system.track.Track;
 import me.makkuusen.timing.system.track.locations.TrackLocation;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.ComponentBuilder;
+import net.kyori.adventure.text.TextComponent;
 import net.kyori.adventure.text.event.ClickEvent;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextColor;
@@ -18,11 +20,13 @@ import org.bukkit.plugin.Plugin;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.UUID;
 
 public class PartyCommand implements CommandExecutor {
     private final PartyManager partyManager;
+    private final PartyRaceManager partyRaceManager;
     private final Plugin plugin;
 
     private final TextColor primaryColor;
@@ -31,8 +35,9 @@ public class PartyCommand implements CommandExecutor {
     private final TextColor acceptColor;
     private final TextColor denyColor;
 
-    public PartyCommand(PartyManager partyManager, Plugin plugin) {
+    public PartyCommand(PartyManager partyManager, PartyRaceManager partyRaceManager, Plugin plugin) {
         this.partyManager = partyManager;
+        this.partyRaceManager = partyRaceManager;
         this.plugin = plugin;
 
         this.primaryColor = TextColor.fromHexString("#" + plugin.getConfig().getString("primarycolour", "0260C6"));
@@ -43,13 +48,11 @@ public class PartyCommand implements CommandExecutor {
     }
 
     @Override
-    public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
-        if (!(sender instanceof Player)) {
+    public boolean onCommand(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label, String[] args) {
+        if (!(sender instanceof Player player)) {
             sender.sendMessage("§cThis command can only be used by players!");
             return true;
         }
-
-        Player player = (Player) sender;
 
         if (args.length == 0) {
             sendHelp(player);
@@ -137,7 +140,7 @@ public class PartyCommand implements CommandExecutor {
                 .append(Component.newline())
                 .append(Component.text("/party race ", secondaryColor))
                 .append(Component.text("- Start a party race", defaultColor))
-                        .build();
+                .build();
 
         player.sendMessage(helpMessage);
     }
@@ -176,19 +179,39 @@ public class PartyCommand implements CommandExecutor {
 
         if (partyManager.invitePlayer(party, target)) {
             player.sendMessage("§aInvite sent to " + target.getName() + "!");
+
+            String acceptText = "[Accept]";
+            String denyText = "[Decline]";
+            String buttonSeparator = "  ";
+
+            int line1Width = FontInfo.getStringWidth("You have been invited to join ", false)
+                    + FontInfo.getStringWidth(player.getName(), false)
+                    + FontInfo.getStringWidth("'s party!", false);
+
+            int buttonsWidth = FontInfo.getStringWidth(acceptText, true)
+                    + FontInfo.getStringWidth(buttonSeparator, false)
+                    + FontInfo.getStringWidth(denyText, true);
+
+            String expirationText = "This invite will expire in " + plugin.getConfig().getInt("invitetimeout", 30) + " seconds";
+            int expirationWidth = FontInfo.getStringWidth(expirationText, false);
+
+            int maxWidth = Math.max(line1Width, Math.max(buttonsWidth, expirationWidth));
+
+            String buttonsPadding = FontInfo.getPadding(maxWidth, buttonsWidth);
+
             Component inviteMessage = Component.text()
                     .append(Component.text("You have been invited to join ", primaryColor))
                     .append(Component.text(player.getName(), secondaryColor))
                     .append(Component.text("'s party!", primaryColor))
                     .append(Component.newline())
-                    .append(Component.text("         "))
-                    .append(Component.text("[Accept]", acceptColor, TextDecoration.BOLD)
+                    .append(Component.text(buttonsPadding))
+                    .append(Component.text(acceptText, acceptColor, TextDecoration.BOLD)
                             .clickEvent(ClickEvent.runCommand("/party accept")))
-                    .append(Component.text("  "))
-                    .append(Component.text("[Decline]", denyColor, TextDecoration.BOLD)
+                    .append(Component.text(buttonSeparator, defaultColor))
+                    .append(Component.text(denyText, denyColor, TextDecoration.BOLD)
                             .clickEvent(ClickEvent.runCommand("/party decline")))
                     .append(Component.newline())
-                    .append(Component.text("This invite will expire in " + plugin.getConfig().getInt("invitetimeout", 30) + " seconds", NamedTextColor.GRAY))
+                    .append(Component.text(expirationText, NamedTextColor.GRAY))
                     .build();
             target.sendMessage(inviteMessage);
         } else {
@@ -276,19 +299,19 @@ public class PartyCommand implements CommandExecutor {
 
         Player leader = player.getServer().getPlayer(party.getLeader());
 
-        ComponentBuilder partyInfo = Component.text()
-                        .append(Component.text("=== ", secondaryColor))
-                        .append(Component.text("Party Members", primaryColor, TextDecoration.BOLD))
-                        .append(Component.text(" ===", secondaryColor))
-                        .append(Component.newline())
-                        .append(Component.text("Leader: " + leader.getName(), defaultColor))
-                        .append(Component.newline())
-                        .append(Component.newline())
-                        .append(Component.text("Members: " + party.getMembers().size(), defaultColor))
-                        .append(Component.newline())
-                        .append(Component.text("\uD83D\uDC51 ", secondaryColor))
-                        .append(Component.text(leader.getName(), primaryColor))
-                        .append(Component.newline());
+        ComponentBuilder<TextComponent, TextComponent.Builder> partyInfo = Component.text()
+                .append(Component.text("=== ", secondaryColor))
+                .append(Component.text("Party Members", primaryColor, TextDecoration.BOLD))
+                .append(Component.text(" ===", secondaryColor))
+                .append(Component.newline())
+                .append(Component.text("Leader: " + leader.getName(), defaultColor))
+                .append(Component.newline())
+                .append(Component.newline())
+                .append(Component.text("Members: " + party.getMembers().size(), defaultColor))
+                .append(Component.newline())
+                .append(Component.text("\uD83D\uDC51 ", secondaryColor))
+                .append(Component.text(leader.getName(), primaryColor))
+                .append(Component.newline());
 
         for (UUID memberUUID : party.getMembers()) {
             Player member = player.getServer().getPlayer(memberUUID);
@@ -299,11 +322,11 @@ public class PartyCommand implements CommandExecutor {
         }
 
         partyInfo.append(Component.newline())
-                        .append(Component.text("[Invite]", acceptColor, TextDecoration.BOLD)
-                                .clickEvent(ClickEvent.suggestCommand("/party invite ")))
-                        .append(Component.text(" "))
-                        .append(Component.text("[Leave]", denyColor, TextDecoration.BOLD)
-                                .clickEvent(ClickEvent.runCommand("/party leave")));
+                .append(Component.text("[Invite]", acceptColor, TextDecoration.BOLD)
+                        .clickEvent(ClickEvent.suggestCommand("/party invite ")))
+                .append(Component.text(" "))
+                .append(Component.text("[Leave]", denyColor, TextDecoration.BOLD)
+                        .clickEvent(ClickEvent.runCommand("/party leave")));
 
         player.sendMessage(partyInfo.build());
     }
@@ -344,7 +367,7 @@ public class PartyCommand implements CommandExecutor {
 
         if (args.length >= 3) {
             try {
-                laps = Math.min(Integer.parseInt(args[2]), plugin.getConfig().getInt("maxlaps", 10));
+                laps = Math.min(Integer.parseInt(args[2]), plugin.getConfig().getInt("maxlaps", 100));
             } catch (NumberFormatException e) {
                 player.sendMessage("§cInvalid number of laps!");
                 return;
@@ -362,7 +385,6 @@ public class PartyCommand implements CommandExecutor {
             }
         }
 
-        PartyRaceManager partyRaceManager = new PartyRaceManager(partyManager, plugin);
         partyRaceManager.startPartyRace(player, t, laps, pits);
     }
 }

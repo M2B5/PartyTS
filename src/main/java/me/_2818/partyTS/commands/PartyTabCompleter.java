@@ -42,7 +42,6 @@ public class PartyTabCompleter implements TabCompleter {
             completions.add("info");
             completions.add("race");
         } else if (args.length == 2) {
-            // Second argument: player name (for invite and kick) or track name (for race)
             switch (args[0].toLowerCase()) {
                 case "invite":
                     // Only show online players not in a party
@@ -67,7 +66,6 @@ public class PartyTabCompleter implements TabCompleter {
                     }
                     break;
                 case "race":
-                    // Show available tracks
                     return TimingSystemAPI.getTracks().stream()
                             .filter(Track::isOpen)
                             .map(Track::getCommandName)

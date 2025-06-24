@@ -1,11 +1,14 @@
-# Maximum laps for a party race
+# Maximum laps for a party race or duel
 maxlaps: 100
+maxlapsduels: 10
 
 # Time in seconds after first player finishes to end the race
-endraceafterwin: 30
+endraceafterwin: 90
+endduelafterwin: 45
 
 # Time in seconds after race starts to end the race
 maxracetime: 3600
+maxdueltime: 900
 
 # Delay in seconds between sending invites to the same player, time in seconds before an invitation times out.
 invitetimeout: 30

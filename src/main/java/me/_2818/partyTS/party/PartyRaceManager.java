@@ -1,5 +1,6 @@
 package me._2818.partyTS.party;
 
+import lombok.Getter;
 import me.makkuusen.timing.system.commands.CommandHeat;
 import me.makkuusen.timing.system.database.EventDatabase;
 import me.makkuusen.timing.system.event.Event;
@@ -21,6 +22,7 @@ import org.bukkit.plugin.Plugin;
 public class PartyRaceManager {
     private final PartyManager partyManager;
     private final Plugin plugin;
+    @Getter
     private final Set<Heat> activePartyHeats = new HashSet<>();
 
     public PartyRaceManager(PartyManager partyManager, Plugin plugin) {
@@ -29,7 +31,7 @@ public class PartyRaceManager {
     }
 
     public boolean startPartyRace(Player player, Track track, int laps, int pits) {
-        final String name = "Party_Race_" + track.getDisplayName() + "_" + player.getName();
+        final String name = "Party_Race_" + track.getCommandName() + "_" + player.getName();
         Optional<Event> maybeEvent = EventDatabase.eventNew(player.getUniqueId(), name);
         if(maybeEvent.isEmpty()) return false;
         Event event = maybeEvent.get();
@@ -84,12 +86,9 @@ public class PartyRaceManager {
 
         int maxRaceTime = plugin.getConfig().getInt("maxracetime", 3600) * 20;
 
-        Bukkit.getScheduler().runTaskLater(plugin, () -> {
-            endPartyRace(finalHeat);
-        }, maxRaceTime);
+        Bukkit.getScheduler().runTaskLater(plugin, () -> endPartyRace(finalHeat), maxRaceTime);
 
         activePartyHeats.add(heat);
-
         return true;
     }
 
