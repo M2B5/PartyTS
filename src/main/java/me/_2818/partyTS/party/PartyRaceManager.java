@@ -1,6 +1,7 @@
 package me._2818.partyTS.party;
 
 import lombok.Getter;
+import me.makkuusen.timing.system.api.TimingSystemAPI;
 import me.makkuusen.timing.system.commands.CommandHeat;
 import me.makkuusen.timing.system.database.EventDatabase;
 import me.makkuusen.timing.system.event.Event;
@@ -72,7 +73,15 @@ public class PartyRaceManager {
 
         for (UUID memberUUID : partyManager.getPartyByLeader(player).getMembers()) {
             Player member = Bukkit.getPlayer(memberUUID);
+
             if (member != null) {
+                var maybeDriver = TimingSystemAPI.getDriverFromRunningHeat(memberUUID);
+
+                if (maybeDriver.isPresent()) {
+                    member.sendMessage("§cThe party leader started a race, but you are already in a heat!");
+                    continue;
+                }
+
                 EventDatabase.heatDriverNew(memberUUID, heat, heat.getDrivers().size() + 1);
             }
         }

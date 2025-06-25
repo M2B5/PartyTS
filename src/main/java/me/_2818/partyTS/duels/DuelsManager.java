@@ -7,7 +7,6 @@ import me.makkuusen.timing.system.database.EventDatabase;
 import me.makkuusen.timing.system.event.Event;
 import me.makkuusen.timing.system.heat.Heat;
 import me.makkuusen.timing.system.heat.HeatState;
-import me.makkuusen.timing.system.participant.Driver;
 import me.makkuusen.timing.system.round.Round;
 import me.makkuusen.timing.system.round.RoundType;
 import me.makkuusen.timing.system.track.Track;
@@ -66,6 +65,19 @@ public class DuelsManager {
 
         Player challenger = Bukkit.getPlayer(invite.getChallenger());
         if (challenger == null || !challenger.isOnline()) {
+            player.sendMessage("§cYou don't have any pending duel requests!");
+            return false;
+        }
+
+        var maybeDriver = TimingSystemAPI.getDriverFromRunningHeat(player.getUniqueId());
+        if (maybeDriver.isPresent()) {
+            player.sendMessage("§cYou are already in a heat!");
+            return false;
+        }
+
+        var maybeDriver2 = TimingSystemAPI.getDriverFromRunningHeat(challenger.getUniqueId());
+        if (maybeDriver2.isPresent()) {
+            player.sendMessage("§cThat player is already in a heat!");
             return false;
         }
 
@@ -83,8 +95,6 @@ public class DuelsManager {
     }
 
     private boolean startDuel(Player player, Player target, Track track, int laps, int pits) {
-        if (!checkDuel(player, target)) return false;
-
         final String name = player.getName() + "_vs_" + target.getName();
         Optional<Event> maybeEvent = EventDatabase.eventNew(player.getUniqueId(), name);
         if(maybeEvent.isEmpty()) return false;
@@ -140,27 +150,6 @@ public class DuelsManager {
 
         activeDuels.add(heat);
         return true;
-    }
-
-    private boolean checkDuel(Player player, Player target) {
-        try {
-            var maybePlayerDriver = TimingSystemAPI.getDriverFromRunningHeat(player.getUniqueId());
-            var maybeTargetDriver = TimingSystemAPI.getDriverFromRunningHeat(target.getUniqueId());
-
-            if (maybePlayerDriver.isPresent()) {
-                Driver playerDriver = maybePlayerDriver.get();
-                playerDriver.getHeat().disqualifyDriver(playerDriver);
-            }
-
-            if (maybeTargetDriver.isPresent()) {
-                Driver targetDriver = maybeTargetDriver.get();
-                targetDriver.getHeat().disqualifyDriver(targetDriver);
-            }
-
-            return true;
-        } catch (Exception e) {
-            return false;
-        }
     }
 
     public void endDuel(Heat heat) {

@@ -344,6 +344,13 @@ public class PartyCommand implements CommandExecutor {
             return;
         }
 
+        var maybeDriver = TimingSystemAPI.getDriverFromRunningHeat(player.getUniqueId());
+
+        if (maybeDriver.isPresent()) {
+            player.sendMessage("§cYou are already in a heat!");
+            return;
+        }
+
         var possibleTrack = TimingSystemAPI.getTrack(args[1]);
 
         if (possibleTrack.isEmpty()) {

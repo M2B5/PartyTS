@@ -95,6 +95,20 @@ public class DuelCommand implements CommandExecutor {
             return;
         }
 
+        var maybeDriver = TimingSystemAPI.getDriverFromRunningHeat(player.getUniqueId());
+
+        if (maybeDriver.isPresent()) {
+            player.sendMessage("§cYou are already in a heat!");
+            return;
+        }
+
+        var maybeDriver2 = TimingSystemAPI.getDriverFromRunningHeat(target.getUniqueId());
+
+        if (maybeDriver2.isPresent()) {
+            player.sendMessage("§cThat player is already in a heat!");
+            return;
+        }
+
         Track track = null;
         if (args.length >= 2) {
             Optional<Track> possibleTrack = TimingSystemAPI.getTrack(args[1]);
