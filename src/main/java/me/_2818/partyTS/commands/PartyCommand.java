@@ -29,22 +29,30 @@ public class PartyCommand implements CommandExecutor {
     private final PartyRaceManager partyRaceManager;
     private final Plugin plugin;
 
-    private final TextColor primaryColor;
-    private final TextColor secondaryColor;
-    private final TextColor defaultColor;
-    private final TextColor acceptColor;
-    private final TextColor denyColor;
-
     public PartyCommand(PartyManager partyManager, PartyRaceManager partyRaceManager, Plugin plugin) {
         this.partyManager = partyManager;
         this.partyRaceManager = partyRaceManager;
         this.plugin = plugin;
-
-        this.primaryColor = TextColor.fromHexString("#" + plugin.getConfig().getString("primarycolour", "0260C6"));
-        this.secondaryColor = TextColor.fromHexString("#" + plugin.getConfig().getString("secondarycolour", "4cafff"));
-        this.defaultColor = TextColor.fromHexString("#" + plugin.getConfig().getString("defaultcolour", "ffffff"));
-        this.acceptColor = TextColor.fromHexString("#" + plugin.getConfig().getString("acceptcolour", "23ff00"));
-        this.denyColor = TextColor.fromHexString("#" + plugin.getConfig().getString("denycolour", "ff0000"));
+    }
+    
+    private TextColor getPrimaryColor() {
+        return TextColor.fromHexString("#" + plugin.getConfig().getString("primarycolour", "0260C6"));
+    }
+    
+    private TextColor getSecondaryColor() {
+        return TextColor.fromHexString("#" + plugin.getConfig().getString("secondarycolour", "4cafff"));
+    }
+    
+    private TextColor getDefaultColor() {
+        return TextColor.fromHexString("#" + plugin.getConfig().getString("defaultcolour", "ffffff"));
+    }
+    
+    private TextColor getAcceptColor() {
+        return TextColor.fromHexString("#" + plugin.getConfig().getString("acceptcolour", "23ff00"));
+    }
+    
+    private TextColor getDenyColor() {
+        return TextColor.fromHexString("#" + plugin.getConfig().getString("denycolour", "ff0000"));
     }
 
     @Override
@@ -93,6 +101,13 @@ public class PartyCommand implements CommandExecutor {
             case "list", "info":
                 handleList(player);
                 break;
+            case "reload":
+                if (!player.hasPermission("partyts.reload")) {
+                    player.sendMessage("§cYou don't have permission to use this command!");
+                    return true;
+                }
+                handleReload(player);
+                break;
             case "race":
                 if (args.length < 2) {
                     player.sendMessage("§cUsage: /party race <track> [laps] [pits]");
@@ -110,36 +125,39 @@ public class PartyCommand implements CommandExecutor {
 
     private void sendHelp(Player player) {
         Component helpMessage = Component.text()
-                .append(Component.text("=== ", secondaryColor))
-                .append(Component.text("Party Commands", primaryColor))
-                .append(Component.text(" ===", secondaryColor))
+                .append(Component.text("=== ", getSecondaryColor()))
+                .append(Component.text("Party Commands", getPrimaryColor()))
+                .append(Component.text(" ===", getSecondaryColor()))
                 .append(Component.newline())
-                .append(Component.text("/party create ", secondaryColor))
-                .append(Component.text("- Create a new party", defaultColor))
+                .append(Component.text("/party create ", getSecondaryColor()))
+                .append(Component.text("- Create a new party", getDefaultColor()))
                 .append(Component.newline())
-                .append(Component.text("/party invite ", secondaryColor))
-                .append(Component.text("- Invite a player to your party", defaultColor))
+                .append(Component.text("/party invite ", getSecondaryColor()))
+                .append(Component.text("- Invite a player to your party", getDefaultColor()))
                 .append(Component.newline())
-                .append(Component.text("/party accept ", secondaryColor))
-                .append(Component.text("- Accept a party invite", defaultColor))
+                .append(Component.text("/party accept ", getSecondaryColor()))
+                .append(Component.text("- Accept a party invite", getDefaultColor()))
                 .append(Component.newline())
-                .append(Component.text("/party decline ", secondaryColor))
-                .append(Component.text("- Decline a party invite", defaultColor))
+                .append(Component.text("/party decline ", getSecondaryColor()))
+                .append(Component.text("- Decline a party invite", getDefaultColor()))
                 .append(Component.newline())
-                .append(Component.text("/party kick ", secondaryColor))
-                .append(Component.text("- Kick a player from your party", defaultColor))
+                .append(Component.text("/party kick ", getSecondaryColor()))
+                .append(Component.text("- Kick a player from your party", getDefaultColor()))
                 .append(Component.newline())
-                .append(Component.text("/party leave ", secondaryColor))
-                .append(Component.text("- Leave your current party", defaultColor))
+                .append(Component.text("/party leave ", getSecondaryColor()))
+                .append(Component.text("- Leave your current party", getDefaultColor()))
                 .append(Component.newline())
-                .append(Component.text("/party list ", secondaryColor))
-                .append(Component.text("- List party members", defaultColor))
+                .append(Component.text("/party list ", getSecondaryColor()))
+                .append(Component.text("- List party members", getDefaultColor()))
                 .append(Component.newline())
-                .append(Component.text("/party info ", secondaryColor))
-                .append(Component.text("- List party members", defaultColor))
+                .append(Component.text("/party info ", getSecondaryColor()))
+                .append(Component.text("- List party members", getDefaultColor()))
                 .append(Component.newline())
-                .append(Component.text("/party race ", secondaryColor))
-                .append(Component.text("- Start a party race", defaultColor))
+                .append(Component.text("/party race ", getSecondaryColor()))
+                .append(Component.text("- Start a party race", getDefaultColor()))
+                .append(Component.newline())
+                .append(Component.text("/party reload ", getSecondaryColor()))
+                .append(Component.text("- Reload the configuration", getDefaultColor()))
                 .build();
 
         player.sendMessage(helpMessage);
@@ -200,15 +218,15 @@ public class PartyCommand implements CommandExecutor {
             String buttonsPadding = FontInfo.getPadding(maxWidth, buttonsWidth);
 
             Component inviteMessage = Component.text()
-                    .append(Component.text("You have been invited to join ", primaryColor))
-                    .append(Component.text(player.getName(), secondaryColor))
-                    .append(Component.text("'s party!", primaryColor))
+                    .append(Component.text("You have been invited to join ", getPrimaryColor()))
+                    .append(Component.text(player.getName(), getSecondaryColor()))
+                    .append(Component.text("'s party!", getPrimaryColor()))
                     .append(Component.newline())
                     .append(Component.text(buttonsPadding))
-                    .append(Component.text(acceptText, acceptColor, TextDecoration.BOLD)
+                    .append(Component.text(acceptText, getAcceptColor(), TextDecoration.BOLD)
                             .clickEvent(ClickEvent.runCommand("/party accept")))
-                    .append(Component.text(buttonSeparator, defaultColor))
-                    .append(Component.text(denyText, denyColor, TextDecoration.BOLD)
+                    .append(Component.text(buttonSeparator, getDefaultColor()))
+                    .append(Component.text(denyText, getDenyColor(), TextDecoration.BOLD)
                             .clickEvent(ClickEvent.runCommand("/party decline")))
                     .append(Component.newline())
                     .append(Component.text(expirationText, NamedTextColor.GRAY))
@@ -300,35 +318,45 @@ public class PartyCommand implements CommandExecutor {
         Player leader = player.getServer().getPlayer(party.getLeader());
 
         ComponentBuilder<TextComponent, TextComponent.Builder> partyInfo = Component.text()
-                .append(Component.text("=== ", secondaryColor))
-                .append(Component.text("Party Members", primaryColor, TextDecoration.BOLD))
-                .append(Component.text(" ===", secondaryColor))
+                .append(Component.text("=== ", getSecondaryColor()))
+                .append(Component.text("Party Members", getPrimaryColor(), TextDecoration.BOLD))
+                .append(Component.text(" ===", getSecondaryColor()))
                 .append(Component.newline())
-                .append(Component.text("Leader: " + leader.getName(), defaultColor))
+                .append(Component.text("Leader: " + leader.getName(), getDefaultColor()))
                 .append(Component.newline())
                 .append(Component.newline())
-                .append(Component.text("Members: " + party.getMembers().size(), defaultColor))
+                .append(Component.text("Members: " + party.getMembers().size(), getDefaultColor()))
                 .append(Component.newline())
-                .append(Component.text("\uD83D\uDC51 ", secondaryColor))
-                .append(Component.text(leader.getName(), primaryColor))
+                .append(Component.text("\uD83D\uDC51 ", getSecondaryColor()))
+                .append(Component.text(leader.getName(), getPrimaryColor()))
                 .append(Component.newline());
 
         for (UUID memberUUID : party.getMembers()) {
             Player member = player.getServer().getPlayer(memberUUID);
             if (member.getName().equals(leader.getName())) continue;
-            partyInfo.append(Component.text("- ", secondaryColor))
-                    .append(Component.text(member.getName(), defaultColor))
+            partyInfo.append(Component.text("- ", getSecondaryColor()))
+                    .append(Component.text(member.getName(), getDefaultColor()))
                     .append(Component.newline());
         }
 
         partyInfo.append(Component.newline())
-                .append(Component.text("[Invite]", acceptColor, TextDecoration.BOLD)
+                .append(Component.text("[Invite]", getAcceptColor(), TextDecoration.BOLD)
                         .clickEvent(ClickEvent.suggestCommand("/party invite ")))
                 .append(Component.text(" "))
-                .append(Component.text("[Leave]", denyColor, TextDecoration.BOLD)
+                .append(Component.text("[Leave]", getDenyColor(), TextDecoration.BOLD)
                         .clickEvent(ClickEvent.runCommand("/party leave")));
 
         player.sendMessage(partyInfo.build());
+    }
+
+    private void handleReload(Player player) {
+        try {
+            plugin.reloadConfig();
+            player.sendMessage("§aConfiguration reloaded successfully!");
+        } catch (Exception e) {
+            player.sendMessage("§cFailed to reload configuration: " + e.getMessage());
+            plugin.getLogger().warning("Failed to reload configuration: " + e.getMessage());
+        }
     }
 
     private void handleRace(Player player, String[] args) {

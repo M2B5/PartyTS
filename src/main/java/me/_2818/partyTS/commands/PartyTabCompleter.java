@@ -40,6 +40,7 @@ public class PartyTabCompleter implements TabCompleter {
             completions.add("leave");
             completions.add("list");
             completions.add("info");
+            completions.add("reload");
             completions.add("race");
         } else if (args.length == 2) {
             switch (args[0].toLowerCase()) {
