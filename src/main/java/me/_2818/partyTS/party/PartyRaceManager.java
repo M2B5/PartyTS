@@ -32,7 +32,8 @@ public class PartyRaceManager {
     }
 
     public boolean startPartyRace(Player player, Track track, int laps, int pits) {
-        final String name = "Party_Race_" + track.getCommandName() + "_" + player.getName();
+        final UUID raceUUID = UUID.randomUUID();
+        final String name = "Party_Race_" + raceUUID.toString().substring(0, 8);
         Optional<Event> maybeEvent = EventDatabase.eventNew(player.getUniqueId(), name);
         if(maybeEvent.isEmpty()) return false;
         Event event = maybeEvent.get();
@@ -61,7 +62,7 @@ public class PartyRaceManager {
         }
 
         HeatState state = heat.getHeatState();
-        if (state != HeatState.SETUP && !heat.resetHeat()) return false;
+        if(state != HeatState.SETUP && !heat.resetHeat()) return false;
 
         if (!heat.loadHeat()) {
             EventDatabase.removeEventHard(event);
