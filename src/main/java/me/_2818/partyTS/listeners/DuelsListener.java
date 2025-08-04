@@ -30,7 +30,9 @@ public class DuelsListener implements Listener {
         int endDuelAfterWinTime = plugin.getConfig().getInt("endduelafterwin", 30);
 
         Bukkit.getScheduler().runTaskLater(plugin, () -> {
-            event.getDriver().getHeat().finishHeat();
+            if (duelsManager.getActiveDuels().contains(event.getDriver().getHeat())) {
+                event.getDriver().getHeat().finishHeat();
+            }
         }, endDuelAfterWinTime * 20L);
     }
 }

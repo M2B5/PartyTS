@@ -4,7 +4,7 @@ maxlapsduels: 10
 
 # Time in seconds after first player finishes to end the race
 endraceafterwin: 90
-endduelafterwin: 45
+endduelafterwin: 30
 
 # Time in seconds after race starts to end the race
 maxracetime: 3600

@@ -39,7 +39,7 @@ public class PartyRaceListener implements Listener {
         }
 
         if (event.getDriver().getPosition() == 1) {
-            int endRaceAfterWinTime = plugin.getConfig().getInt("endraceafterwin", 30);
+            int endRaceAfterWinTime = plugin.getConfig().getInt("endraceafterwin", 90);
 
             for (UUID memberUUID : partyManager.getPlayerParty(event.getDriver().getTPlayer().getPlayer()).getMembers()) {
                 Player member = Bukkit.getPlayer(memberUUID);
@@ -49,7 +49,9 @@ public class PartyRaceListener implements Listener {
             }
 
             Bukkit.getScheduler().runTaskLater(plugin, () -> {
-                event.getDriver().getHeat().finishHeat();
+                if (partyRaceManager.getActivePartyHeats().contains(event.getDriver().getHeat())) {
+                    event.getDriver().getHeat().finishHeat();
+                }
             }, endRaceAfterWinTime * 20L); // Convert seconds to ticks
         }
     }
