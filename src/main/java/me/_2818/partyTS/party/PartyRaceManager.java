@@ -96,7 +96,11 @@ public class PartyRaceManager {
 
         int maxRaceTime = plugin.getConfig().getInt("maxracetime", 3600) * 20;
 
-        Bukkit.getScheduler().runTaskLater(plugin, () -> endPartyRace(finalHeat), maxRaceTime);
+        Bukkit.getScheduler().runTaskLater(plugin, () -> {
+            if (getActivePartyHeats().contains(finalHeat)) {
+                endPartyRace(finalHeat);
+            }
+        }, maxRaceTime);
 
         activePartyHeats.add(heat);
         return true;

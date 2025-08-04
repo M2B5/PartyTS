@@ -146,7 +146,11 @@ public class DuelsManager {
 
         int maxDuelTime = plugin.getConfig().getInt("maxdueltime", 900) * 20;
 
-        Bukkit.getScheduler().runTaskLater(plugin, () -> endDuel(finalHeat), maxDuelTime);
+        Bukkit.getScheduler().runTaskLater(plugin, () -> {
+            if (getActiveDuels().contains(finalHeat)) {
+                endDuel(finalHeat);
+            }
+        }, maxDuelTime);
 
         activeDuels.add(heat);
         return true;

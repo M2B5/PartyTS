@@ -31,7 +31,7 @@ public class DuelsListener implements Listener {
 
         Bukkit.getScheduler().runTaskLater(plugin, () -> {
             if (duelsManager.getActiveDuels().contains(event.getDriver().getHeat())) {
-                event.getDriver().getHeat().finishHeat();
+                duelsManager.endDuel(event.getDriver().getHeat());
             }
         }, endDuelAfterWinTime * 20L);
     }
