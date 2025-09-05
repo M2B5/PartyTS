@@ -41,6 +41,10 @@ public class DuelCommandTabCompleter implements TabCompleter {
             completions.add("pits");
         }
 
+        if (!args[args.length - 1].isEmpty()) {
+            completions.removeIf(s -> !s.toLowerCase().startsWith(args[args.length - 1].toLowerCase()));
+        }
+
         return completions;
     }
 }

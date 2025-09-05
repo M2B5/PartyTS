@@ -68,7 +68,7 @@ public class DuelCommand implements CommandExecutor {
                 break;
             default:
                 if (args.length < 2) {
-                    player.sendMessage("§cUsage: /duel challenge <player> [track] [laps] [pits]");
+                    player.sendMessage("§cUsage: /duel <player> [track] [laps] [pits]");
                     return true;
                 }
                 handleChallenge(player, args);
@@ -80,7 +80,7 @@ public class DuelCommand implements CommandExecutor {
 
     private void handleChallenge(Player player, String[] args) {
         if (args.length < 1) {
-            player.sendMessage("§cUsage: /duel challenge <player> [track] [laps] [pits]");
+            player.sendMessage("§cUsage: /duel <player> [track] [laps] [pits]");
             return;
         }
 
