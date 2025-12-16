@@ -4,6 +4,7 @@ import me._2818.partyTS.party.Party;
 import me._2818.partyTS.party.PartyManager;
 import me._2818.partyTS.party.PartyRaceManager;
 import me._2818.partyTS.utils.FontInfo;
+import me.makkuusen.timing.system.TimingSystem;
 import me.makkuusen.timing.system.api.TimingSystemAPI;
 import me.makkuusen.timing.system.track.Track;
 import me.makkuusen.timing.system.track.locations.TrackLocation;
@@ -420,6 +421,48 @@ public class PartyCommand implements CommandExecutor {
             }
         }
 
-        partyRaceManager.startPartyRace(player, t, laps, pits);
+        boolean collisions = true;
+
+        if (args.length >= 5) {
+            try {
+                String collisionMode = args[4].toLowerCase();
+                if (!collisionMode.equals("on") && !collisionMode.equals("off")) {
+                    player.sendMessage("§cInvalid collision mode! Use 'on' or 'off'.");
+                    return;
+                }
+
+                if (collisionMode.equals("off")) {
+                    collisions = false;
+                }
+            } catch (Exception e) {
+                player.sendMessage("§cInvalid collision mode! Use 'on' or 'off'.");
+                return;
+            }
+        }
+
+        boolean drs = false;
+
+        if (args.length >= 6) {
+            try {
+                String drsEnabled = args[5].toLowerCase();
+                if (!drsEnabled.equals("true") && !drsEnabled.equals("false")) {
+                    player.sendMessage("§cInvalid DRS setting! Use 'true' or 'false'.");
+                    return;
+                }
+
+                if (drsEnabled.equals("true")) {
+                    if (!collisions) {
+                        player.sendMessage("§cDRS cannot be enabled when collisions are off!");
+                    } else {
+                        drs = true;
+                    }
+                }
+            } catch (Exception e) {
+                player.sendMessage("§cInvalid DRS setting! Use 'true' or 'false'.");
+                return;
+            }
+        }
+
+        partyRaceManager.startPartyRace(player, t, laps, pits, collisions, drs);
     }
 }

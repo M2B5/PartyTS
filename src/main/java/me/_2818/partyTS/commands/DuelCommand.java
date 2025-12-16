@@ -68,7 +68,7 @@ public class DuelCommand implements CommandExecutor {
                 break;
             default:
                 if (args.length < 2) {
-                    player.sendMessage("§cUsage: /duel <player> [track] [laps] [pits]");
+                    player.sendMessage("§cUsage: /duel <player> [track] [laps] [pits] [collisions] [drs]");
                     return true;
                 }
                 handleChallenge(player, args);
@@ -80,7 +80,7 @@ public class DuelCommand implements CommandExecutor {
 
     private void handleChallenge(Player player, String[] args) {
         if (args.length < 1) {
-            player.sendMessage("§cUsage: /duel <player> [track] [laps] [pits]");
+            player.sendMessage("§cUsage: /duel <player> [track] [laps] [pits] [collisions] [drs]");
             return;
         }
 
@@ -152,8 +152,48 @@ public class DuelCommand implements CommandExecutor {
             }
         }
 
-        if (duelsManager.createDuelInvite(player, target, track, laps, pits)) {
-            sendDuelRequest(player, target, track, laps, pits);
+        boolean collisions = true;
+        if (args.length >= 5) {
+            try {
+                String collisionMode = args[4].toLowerCase();
+                if (!collisionMode.equals("off") && !collisionMode.equals("on")) {
+                    player.sendMessage("§cInvalid collision mode! Use 'on' or 'off'.");
+                    return;
+                }
+
+                if (collisionMode.equals("off")) {
+                    collisions = false;
+                }
+            } catch (Exception e) {
+                player.sendMessage("§cInvalid collision mode! Use 'on' or 'off'.");
+                return;
+            }
+        }
+
+        boolean drs = false;
+        if (args.length >= 6) {
+            try {
+                String drsMode = args[5].toLowerCase();
+                if (!drsMode.equals("off") && !drsMode.equals("on")) {
+                    player.sendMessage("§cInvalid DRS mode! Use 'on' or 'off'.");
+                    return;
+                }
+
+                if (drsMode.equals("on")) {
+                    if (!collisions) {
+                        player.sendMessage("§cDRS cannot be enabled when collisions are off.");
+                    } else {
+                        drs = true;
+                    }
+                }
+            } catch (Exception e) {
+                player.sendMessage("§cInvalid DRS mode! Use 'on' or 'off'.");
+                return;
+            }
+        }
+
+        if (duelsManager.createDuelInvite(player, target, track, laps, pits, collisions, drs)) {
+            sendDuelRequest(player, target, track, laps, pits, collisions, drs);
         } else {
             player.sendMessage("§cCould not send duel request. The player might already have a pending invite.");
         }
@@ -181,7 +221,7 @@ public class DuelCommand implements CommandExecutor {
                 .append(Component.text("Duel Commands", primaryColor, TextDecoration.BOLD))
                 .append(Component.text(" ===", secondaryColor))
                 .append(Component.newline())
-                .append(Component.text("/duel <player> [track] [laps] [pits]", secondaryColor))
+                .append(Component.text("/duel <player> [track] [laps] [pits] [collisions] [drs]", secondaryColor))
                 .append(Component.text(" - Challenge a player to a duel", defaultColor))
                 .append(Component.newline())
                 .append(Component.text("/duel accept", secondaryColor))
@@ -196,7 +236,7 @@ public class DuelCommand implements CommandExecutor {
         player.sendMessage(helpMessage);
     }
 
-    private void sendDuelRequest(Player challenger, Player target, Track track, int laps, int pits) {
+    private void sendDuelRequest(Player challenger, Player target, Track track, int laps, int pits, boolean collisions, boolean drsEnabled) {
         challenger.sendMessage(Component.text("Duel request sent to " + target.getName() + "!", acceptColor));
 
         String headerPrefix = "===== ";
@@ -207,7 +247,9 @@ public class DuelCommand implements CommandExecutor {
         String targetName = target.getName();
         String vsText = " vs ";
 
-        String trackInfo = track.getDisplayName() + " | " + laps + " laps | " + pits + " pits";
+        String collisionText = collisions ? "Collisions: ON" : "Collisions: OFF";
+        String drsText = drsEnabled ? "DRS: ON" : "DRS: OFF";
+        String trackInfo = track.getDisplayName() + " | " + laps + " laps | " + pits + " pits | " + collisionText + " | " + drsText;
 
         String acceptText = "[ACCEPT]";
         String denyText = "[DENY]";

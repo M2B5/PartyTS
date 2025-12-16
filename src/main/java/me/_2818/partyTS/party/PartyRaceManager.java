@@ -5,6 +5,7 @@ import me.makkuusen.timing.system.api.TimingSystemAPI;
 import me.makkuusen.timing.system.commands.CommandHeat;
 import me.makkuusen.timing.system.database.EventDatabase;
 import me.makkuusen.timing.system.event.Event;
+import me.makkuusen.timing.system.heat.CollisionMode;
 import me.makkuusen.timing.system.heat.Heat;
 import me.makkuusen.timing.system.heat.HeatState;
 import me.makkuusen.timing.system.round.Round;
@@ -31,7 +32,7 @@ public class PartyRaceManager {
         this.plugin = plugin;
     }
 
-    public boolean startPartyRace(Player player, Track track, int laps, int pits) {
+    public boolean startPartyRace(Player player, Track track, int laps, int pits, boolean collisions, boolean drsEnabled) {
         final UUID raceUUID = UUID.randomUUID();
         final String name = "Party_Race_" + raceUUID.toString().substring(0, 8);
         Optional<Event> maybeEvent = EventDatabase.eventNew(player.getUniqueId(), name);
@@ -59,6 +60,14 @@ public class PartyRaceManager {
         } else {
             heat.setTotalLaps(laps);
             heat.setTotalPits(pits);
+        }
+
+        if (!collisions) {
+            heat.setCollisionMode(CollisionMode.DISABLED);
+        }
+
+        if (drsEnabled) {
+            heat.setDrs(true);
         }
 
         HeatState state = heat.getHeatState();

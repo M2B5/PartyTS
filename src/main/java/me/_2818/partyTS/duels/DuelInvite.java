@@ -18,15 +18,21 @@ public class DuelInvite {
     @Getter
     private final int pits;
     @Getter
+    private final boolean collisions;
+    @Getter
+    private final boolean drsEnabled;
+    @Getter
     private final long timestamp;
     private final Plugin plugin;
 
-    public DuelInvite(UUID challenger, UUID target, Track track, int laps, int pits, Plugin plugin) {
+    public DuelInvite(UUID challenger, UUID target, Track track, int laps, int pits, boolean collisions, boolean drsEnabled, Plugin plugin) {
         this.challenger = challenger;
         this.target = target;
         this.track = track;
         this.laps = laps;
         this.pits = pits;
+        this.collisions = collisions;
+        this.drsEnabled = drsEnabled;
         this.timestamp = System.currentTimeMillis();
         this.plugin = plugin;
     }

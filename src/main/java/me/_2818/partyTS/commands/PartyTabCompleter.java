@@ -77,6 +77,10 @@ public class PartyTabCompleter implements TabCompleter {
             completions.add("laps");
         } else if (args.length == 4 && args[0].equalsIgnoreCase("race")) {
             completions.add("pits");
+        } else if (args.length == 5 && args[0].equalsIgnoreCase("race")) {
+            completions.add("collisions");
+        } else if (args.length == 6 && args[0].equalsIgnoreCase("race")) {
+            completions.add("drs");
         }
 
         if (!args[args.length - 1].isEmpty()) {

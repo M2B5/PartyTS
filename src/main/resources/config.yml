@@ -12,6 +12,7 @@ maxdueltime: 900
 
 # Delay in seconds between sending invites to the same player, time in seconds before an invitation times out.
 invitetimeout: 30
+duelinvitetimeout: 30
 
 # Colours
 primarycolour: '0260C6'

@@ -39,6 +39,10 @@ public class DuelCommandTabCompleter implements TabCompleter {
             completions.add("laps");
         } else if (args.length == 4) {
             completions.add("pits");
+        } else if (args.length == 5) {
+            completions.add("collisions");
+        } else if (args.length == 6) {
+            completions.add("drs");
         }
 
         if (!args[args.length - 1].isEmpty()) {

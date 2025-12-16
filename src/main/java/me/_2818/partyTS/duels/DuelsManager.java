@@ -5,6 +5,7 @@ import me.makkuusen.timing.system.api.TimingSystemAPI;
 import me.makkuusen.timing.system.commands.CommandHeat;
 import me.makkuusen.timing.system.database.EventDatabase;
 import me.makkuusen.timing.system.event.Event;
+import me.makkuusen.timing.system.heat.CollisionMode;
 import me.makkuusen.timing.system.heat.Heat;
 import me.makkuusen.timing.system.heat.HeatState;
 import me.makkuusen.timing.system.round.Round;
@@ -45,12 +46,12 @@ public class DuelsManager {
         }
     }
 
-    public boolean createDuelInvite(Player challenger, Player target, Track track, int laps, int pits) {
+    public boolean createDuelInvite(Player challenger, Player target, Track track, int laps, int pits, boolean collisions, boolean drsEnabled) {
         if (hasPendingInvite(target)) {
             return false;
         }
 
-        DuelInvite invite = new DuelInvite(challenger.getUniqueId(), target.getUniqueId(), track, laps, pits, plugin);
+        DuelInvite invite = new DuelInvite(challenger.getUniqueId(), target.getUniqueId(), track, laps, pits, collisions, drsEnabled, plugin);
         pendingInvites.put(target.getUniqueId(), invite);
         inviteCooldowns.computeIfAbsent(target.getUniqueId(), k -> new HashMap<>())
                 .put(challenger.getUniqueId(), System.currentTimeMillis());
@@ -81,7 +82,7 @@ public class DuelsManager {
             return false;
         }
 
-        return startDuel(challenger, player, invite.getTrack(), invite.getLaps(), invite.getPits());
+        return startDuel(challenger, player, invite.getTrack(), invite.getLaps(), invite.getPits(), invite.isCollisions(), invite.isDrsEnabled());
     }
 
     public boolean declineDuel(Player player) {
@@ -94,7 +95,7 @@ public class DuelsManager {
         return invite != null && !invite.isExpired();
     }
 
-    private boolean startDuel(Player player, Player target, Track track, int laps, int pits) {
+    private boolean startDuel(Player player, Player target, Track track, int laps, int pits, boolean collisions, boolean drsEnabled) {
         final String name = player.getName() + "_vs_" + target.getName();
         Optional<Event> maybeEvent = EventDatabase.eventNew(player.getUniqueId(), name);
         if(maybeEvent.isEmpty()) return false;
@@ -121,6 +122,14 @@ public class DuelsManager {
         } else {
             heat.setTotalLaps(laps);
             heat.setTotalPits(pits);
+        }
+
+        if (!collisions) {
+            heat.setCollisionMode(CollisionMode.DISABLED);
+        }
+
+        if (drsEnabled) {
+            heat.setDrs(true);
         }
 
         HeatState state = heat.getHeatState();
