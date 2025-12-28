@@ -1,6 +1,7 @@
 package me._2818.partyTS.duels;
 
 import lombok.Getter;
+import me._2818.partyTS.database.DatabaseManager;
 import me.makkuusen.timing.system.api.TimingSystemAPI;
 import me.makkuusen.timing.system.commands.CommandHeat;
 import me.makkuusen.timing.system.database.EventDatabase;
@@ -25,10 +26,20 @@ public class DuelsManager {
     private final Set<Heat> activeDuels = new HashSet<>();
     private final Map<UUID, DuelInvite> pendingInvites = new ConcurrentHashMap<>();
     private final Map<UUID, Map<UUID, Long>> inviteCooldowns = new ConcurrentHashMap<>();
+    private final Map<Heat, Boolean> rankedDuels = new ConcurrentHashMap<>();
+    private final Map<Heat, UUID[]> duelParticipants = new ConcurrentHashMap<>();
+    private final Map<Heat, UUID> duelWinners = new ConcurrentHashMap<>();
     private BukkitTask cleanupTask;
+    private DatabaseEloRatingSystem eloSystem;
 
-    public DuelsManager(Plugin plugin) {
+    public DuelsManager(Plugin plugin, DatabaseManager database) {
         this.plugin = plugin;
+        if (plugin.getConfig().getBoolean("rankedduels.enabled", true)) {
+            plugin.getLogger().info("Initializing database-powered ELO rating system for ranked duels");
+            this.eloSystem = new DatabaseEloRatingSystem(plugin, database);
+        } else {
+            plugin.getLogger().info("Ranked duels are disabled in config");
+        }
         startCleanupTask();
     }
 
@@ -46,12 +57,12 @@ public class DuelsManager {
         }
     }
 
-    public boolean createDuelInvite(Player challenger, Player target, Track track, int laps, int pits, boolean collisions, boolean drsEnabled) {
+    public boolean createDuelInvite(Player challenger, Player target, Track track, int laps, int pits, boolean collisions, boolean drsEnabled, boolean ranked) {
         if (hasPendingInvite(target)) {
             return false;
         }
 
-        DuelInvite invite = new DuelInvite(challenger.getUniqueId(), target.getUniqueId(), track, laps, pits, collisions, drsEnabled, plugin);
+        DuelInvite invite = new DuelInvite(challenger.getUniqueId(), target.getUniqueId(), track, laps, pits, collisions, drsEnabled, ranked, plugin);
         pendingInvites.put(target.getUniqueId(), invite);
         inviteCooldowns.computeIfAbsent(target.getUniqueId(), k -> new HashMap<>())
                 .put(challenger.getUniqueId(), System.currentTimeMillis());
@@ -82,7 +93,7 @@ public class DuelsManager {
             return false;
         }
 
-        return startDuel(challenger, player, invite.getTrack(), invite.getLaps(), invite.getPits(), invite.isCollisions(), invite.isDrsEnabled());
+        return startDuel(challenger, player, invite.getTrack(), invite.getLaps(), invite.getPits(), invite.isCollisions(), invite.isDrsEnabled(), invite.isRanked());
     }
 
     public boolean declineDuel(Player player) {
@@ -95,7 +106,7 @@ public class DuelsManager {
         return invite != null && !invite.isExpired();
     }
 
-    private boolean startDuel(Player player, Player target, Track track, int laps, int pits, boolean collisions, boolean drsEnabled) {
+    private boolean startDuel(Player player, Player target, Track track, int laps, int pits, boolean collisions, boolean drsEnabled, boolean ranked) {
         final String name = player.getName() + "_vs_" + target.getName();
         Optional<Event> maybeEvent = EventDatabase.eventNew(player.getUniqueId(), name);
         if(maybeEvent.isEmpty()) return false;
@@ -162,14 +173,85 @@ public class DuelsManager {
         }, maxDuelTime);
 
         activeDuels.add(heat);
+        duelParticipants.put(heat, new UUID[]{player.getUniqueId(), target.getUniqueId()});
+        if (ranked && eloSystem != null) {
+            rankedDuels.put(heat, true);
+        }
         return true;
     }
 
     public void endDuel(Heat heat) {
-        activeDuels.remove(heat);
-
         Round round = heat.getRound();
         Event event = round.getEvent();
+
+        // Handle ELO updates for ranked duels before removing from maps
+        if (isRankedDuel(heat) && eloSystem != null) {
+            plugin.getLogger().info("Processing ELO update for ranked duel");
+            UUID[] participants = duelParticipants.get(heat);
+            if (participants != null && participants.length == 2) {
+                // Get the actual winner from the stored result
+                UUID winnerId = duelWinners.get(heat);
+                if (winnerId == null) {
+                    // Fallback: assume first participant won (shouldn't happen in normal flow)
+                    plugin.getLogger().warning("No winner stored for ranked duel, using fallback");
+                    winnerId = participants[0];
+                }
+                final UUID finalWinnerId = winnerId;
+                final UUID finalLoserId = participants[0].equals(winnerId) ? participants[1] : participants[0];
+                
+                plugin.getLogger().info("ELO update: Winner=" + finalWinnerId + ", Loser=" + finalLoserId);
+                
+                // Update player names in database
+                Player winnerPlayer = Bukkit.getPlayer(finalWinnerId);
+                Player loserPlayer = Bukkit.getPlayer(finalLoserId);
+                
+                if (winnerPlayer != null) {
+                    eloSystem.updatePlayerName(finalWinnerId, winnerPlayer.getName());
+                }
+                if (loserPlayer != null) {
+                    eloSystem.updatePlayerName(finalLoserId, loserPlayer.getName());
+                }
+                
+                // Calculate and record the match asynchronously
+                eloSystem.calculateEloChange(finalWinnerId, finalLoserId, true)
+                    .thenCompose(eloChange -> {
+                        // Send messages to players
+                        if (winnerPlayer != null && winnerPlayer.isOnline()) {
+                            winnerPlayer.sendMessage("§a§lRanked Duel Complete!");
+                            winnerPlayer.sendMessage("§aELO: " + eloChange.player1OldElo + " → " + eloChange.player1NewElo + 
+                                " (" + (eloChange.player1Change >= 0 ? "+" : "") + eloChange.player1Change + ")");
+                        }
+                        
+                        if (loserPlayer != null && loserPlayer.isOnline()) {
+                            loserPlayer.sendMessage("§c§lRanked Duel Complete!");
+                            loserPlayer.sendMessage("§cELO: " + eloChange.player2OldElo + " → " + eloChange.player2NewElo + 
+                                " (" + (eloChange.player2Change >= 0 ? "+" : "") + eloChange.player2Change + ")");
+                        }
+                        
+                        // Record the match
+                        return eloSystem.recordMatch(finalWinnerId, finalLoserId);
+                    })
+                    .exceptionally(throwable -> {
+                        plugin.getLogger().warning("Failed to process ELO update: " + throwable.getMessage());
+                        return null;
+                    });
+            } else {
+                plugin.getLogger().warning("No participants found for ranked duel ELO update");
+            }
+        } else {
+            if (!isRankedDuel(heat)) {
+                plugin.getLogger().info("Duel ended but was not ranked");
+            }
+            if (eloSystem == null) {
+                plugin.getLogger().warning("ELO system is null");
+            }
+        }
+
+        // Clean up after ELO processing
+        activeDuels.remove(heat);
+        rankedDuels.remove(heat);
+        duelParticipants.remove(heat);
+        duelWinners.remove(heat);
 
         heat.finishHeat();
 
@@ -233,5 +315,81 @@ public class DuelsManager {
         }
         activeDuels.clear();
         plugin.getLogger().info("Duels cleanup complete.");
+    }
+
+    public boolean isRankedDuelsEnabled() {
+        return plugin.getConfig().getBoolean("rankedduels.enabled", true) && eloSystem != null;
+    }
+
+    public DatabaseEloRatingSystem getEloSystem() {
+        return eloSystem;
+    }
+
+    public int getPlayerElo(UUID playerId) {
+        return eloSystem != null ? eloSystem.getPlayerEloSync(playerId) : 0;
+    }
+
+    public int getPlayerWins(UUID playerId) {
+        return eloSystem != null ? eloSystem.getPlayerWinsSync(playerId) : 0;
+    }
+
+    public int getPlayerLosses(UUID playerId) {
+        return eloSystem != null ? eloSystem.getPlayerLossesSync(playerId) : 0;
+    }
+
+    public boolean isRankedDuel(Heat heat) {
+        return rankedDuels.containsKey(heat);
+    }
+
+    public void handleDuelFinish(Heat heat, UUID winnerId) {
+        if (isRankedDuel(heat) && eloSystem != null) {
+            UUID[] participants = duelParticipants.get(heat);
+            if (participants != null && participants.length == 2) {
+                UUID loserId = participants[0].equals(winnerId) ? participants[1] : participants[0];
+                
+                Player winnerPlayer = Bukkit.getPlayer(winnerId);
+                Player loserPlayer = Bukkit.getPlayer(loserId);
+                
+                // Update player names in database
+                if (winnerPlayer != null) {
+                    eloSystem.updatePlayerName(winnerId, winnerPlayer.getName());
+                }
+                if (loserPlayer != null) {
+                    eloSystem.updatePlayerName(loserId, loserPlayer.getName());
+                }
+                
+                // Calculate and record the match asynchronously
+                eloSystem.calculateEloChange(winnerId, loserId, true)
+                    .thenCompose(eloChange -> {
+                        // Send messages to players
+                        if (winnerPlayer != null && winnerPlayer.isOnline()) {
+                            winnerPlayer.sendMessage("§a§lRanked Duel Complete!");
+                            winnerPlayer.sendMessage("§aELO: " + eloChange.player1OldElo + " → " + eloChange.player1NewElo + 
+                                " (" + (eloChange.player1Change >= 0 ? "+" : "") + eloChange.player1Change + ")");
+                        }
+                        
+                        if (loserPlayer != null && loserPlayer.isOnline()) {
+                            loserPlayer.sendMessage("§c§lRanked Duel Complete!");
+                            loserPlayer.sendMessage("§cELO: " + eloChange.player2OldElo + " → " + eloChange.player2NewElo + 
+                                " (" + (eloChange.player2Change >= 0 ? "+" : "") + eloChange.player2Change + ")");
+                        }
+                        
+                        // Record the match
+                        return eloSystem.recordMatch(winnerId, loserId);
+                    })
+                    .exceptionally(throwable -> {
+                        plugin.getLogger().warning("Failed to process ELO update: " + throwable.getMessage());
+                        return null;
+                    });
+            }
+        }
+    }
+
+    public UUID[] getDuelParticipants(Heat heat) {
+        return duelParticipants.get(heat);
+    }
+
+    public void setDuelWinner(Heat heat, UUID winnerId) {
+        duelWinners.put(heat, winnerId);
     }
 }

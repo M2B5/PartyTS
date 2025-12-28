@@ -44,11 +44,31 @@ PartyTS provides two main commands: `/party` for managing groups and `/duel` for
 
 ### Duel Commands
 
-| Command                                    | Description                                                  | Permission      |
-| ------------------------------------------ | ------------------------------------------------------------ | --------------- |
-| `/duel <player> <track> [laps] [pits]`     | Challenges a player to a 1v1 duel on a specific track.       | `partyts.user`  |
-| `/duel accept`                             | Accepts a pending duel invitation.                           | `partyts.user`  |
-| `/duel decline`                            | Declines a pending duel invitation.                          | `partyts.user`  |
+| Command                                                      | Description                                                  | Permission      |
+| ------------------------------------------------------------ | ------------------------------------------------------------ | --------------- |
+| `/duel <player> <track> [laps] [pits] [collisions] [drs] [ranked]` | Challenges a player to a 1v1 duel on a specific track.       | `partyts.user`  |
+| `/duel accept`                                               | Accepts a pending duel invitation.                           | `partyts.user`  |
+| `/duel decline`                                              | Declines a pending duel invitation.                          | `partyts.user`  |
+| `/duel elo [player]`                                         | Views ELO rating for yourself or another player.             | `partyts.user`  |
+| `/duel leaderboard`                                          | Shows the top 10 players by ELO rating.                     | `partyts.user`  |
+
+### Ranked Duels
+
+PartyTS includes an ELO rating system for competitive duels:
+
+- **ELO System**: Uses a chess-like rating system to track player skill
+- **Ranked Duels**: Set the `ranked` parameter to `true` when challenging players
+- **Rating Updates**: Winners gain ELO points, losers lose points based on the rating difference
+- **Leaderboards**: View top players with `/duel leaderboard`
+- **Statistics**: Track wins, losses, and current rating with `/duel elo`
+
+The ELO system can be configured in the config file and is enabled by default.
+
+#### ELO Configuration Options:
+- `defaultelo`: Starting ELO rating for new players (default: 1200)
+- `kfactor`: ELO calculation multiplier (default: 32)
+- `minchange`: Minimum ELO change per duel (default: 1)
+- `maxchange`: Maximum ELO change per duel (default: 50)
 
 ## Configuration
 

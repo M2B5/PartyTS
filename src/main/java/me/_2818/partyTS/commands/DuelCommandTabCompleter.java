@@ -24,25 +24,43 @@ public class DuelCommandTabCompleter implements TabCompleter {
         List<String> completions = new ArrayList<>();
 
         if (args.length == 1) {
+            // Add subcommands
+            completions.add("accept");
+            completions.add("deny");
+            completions.add("help");
+            completions.add("elo");
+            completions.add("leaderboard");
+            
+            // Add player names
             for (Player onlinePlayer : Bukkit.getOnlinePlayers()) {
                 if (!onlinePlayer.equals(player)) {
                     completions.add(onlinePlayer.getName());
                 }
             }
         } else if (args.length == 2) {
-            return TimingSystemAPI.getTracks().stream()
-                    .filter(Track::isOpen)
-                    .map(Track::getCommandName)
-                    .filter(name -> name.toLowerCase().startsWith(args[1].toLowerCase()))
-                    .collect(Collectors.toList());
+            // Handle subcommands
+            if (args[0].equalsIgnoreCase("elo")) {
+                for (Player onlinePlayer : Bukkit.getOnlinePlayers()) {
+                    completions.add(onlinePlayer.getName());
+                }
+            } else {
+                // Track names for duel challenges
+                return TimingSystemAPI.getTracks().stream()
+                        .filter(Track::isOpen)
+                        .map(Track::getCommandName)
+                        .filter(name -> name.toLowerCase().startsWith(args[1].toLowerCase()))
+                        .collect(Collectors.toList());
+            }
         } else if (args.length == 3) {
             completions.add("laps");
         } else if (args.length == 4) {
             completions.add("pits");
         } else if (args.length == 5) {
-            completions.add("collisions");
+            completions.add("collisions (on/off)");
         } else if (args.length == 6) {
-            completions.add("drs");
+            completions.add("drs (on/off)");
+        } else if (args.length == 7) {
+            completions.add("ranked (true/false)");
         }
 
         if (!args[args.length - 1].isEmpty()) {

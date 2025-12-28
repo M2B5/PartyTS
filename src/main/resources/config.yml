@@ -14,6 +14,14 @@ maxdueltime: 900
 invitetimeout: 30
 duelinvitetimeout: 30
 
+# Ranked Duels System
+rankedduels:
+  enabled: true
+  defaultelo: 1200
+  kfactor: 32
+  minchange: 1
+  maxchange: 50
+
 # Colours
 primarycolour: '0260C6'
 secondarycolour: '4cafff'

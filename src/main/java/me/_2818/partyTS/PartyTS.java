@@ -5,6 +5,7 @@ import me._2818.partyTS.commands.DuelCommand;
 import me._2818.partyTS.commands.DuelCommandTabCompleter;
 import me._2818.partyTS.commands.PartyCommand;
 import me._2818.partyTS.commands.PartyTabCompleter;
+import me._2818.partyTS.database.DatabaseManager;
 import me._2818.partyTS.duels.DuelsManager;
 import me._2818.partyTS.listeners.DisconnectListener;
 import me._2818.partyTS.listeners.DuelsListener;
@@ -15,6 +16,7 @@ import me._2818.partyTS.party.PartyRaceManager;
 import org.bukkit.plugin.java.JavaPlugin;
 
 public final class PartyTS extends JavaPlugin {
+    private DatabaseManager databaseManager;
     private PartyManager partyManager;
     private PartyRaceManager partyRaceManager;
     @Getter
@@ -24,9 +26,11 @@ public final class PartyTS extends JavaPlugin {
     public void onEnable() {
         this.saveDefaultConfig();
 
+        databaseManager = new DatabaseManager(this);
+        
         partyManager = new PartyManager(this);
         partyRaceManager = new PartyRaceManager(partyManager, this);
-        duelsManager = new DuelsManager(this);
+        duelsManager = new DuelsManager(this, databaseManager);
 
         getCommand("party").setExecutor(new PartyCommand(partyManager, partyRaceManager, this));
         getCommand("party").setTabCompleter(new PartyTabCompleter(partyManager));
@@ -52,6 +56,9 @@ public final class PartyTS extends JavaPlugin {
         }
         if (duelsManager != null) {
             duelsManager.disable();
+        }
+        if (databaseManager != null) {
+            databaseManager.close();
         }
         getLogger().info("PartyTS has been disabled!");
     }
