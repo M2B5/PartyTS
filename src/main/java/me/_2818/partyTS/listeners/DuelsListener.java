@@ -31,30 +31,10 @@ public class DuelsListener implements Listener {
         }
 
         if (event.getDriver().getPosition() == 1) {
-            // First place finisher - determine winner from participants
-            plugin.getLogger().info("Player finished in position 1 in duel");
-            UUID[] participants = duelsManager.getDuelParticipants(heat);
-            if (participants != null && participants.length == 2) {
-                // For now, use a simple approach: the first online participant is the winner
-                // This is a temporary solution until we can properly match drivers to UUIDs
-                UUID winnerId = participants[0];
-                Player player1 = Bukkit.getPlayer(participants[0]);
-                Player player2 = Bukkit.getPlayer(participants[1]);
-                
-                // Simple heuristic: if only one player is online, they're probably the winner
-                if (player1 != null && player1.isOnline() && (player2 == null || !player2.isOnline())) {
-                    winnerId = participants[0];
-                } else if (player2 != null && player2.isOnline() && (player1 == null || !player1.isOnline())) {
-                    winnerId = participants[1];
-                } else {
-                    // Both online or both offline - use first participant as fallback
-                    winnerId = participants[0];
-                }
-                
-                plugin.getLogger().info("Setting duel winner: " + winnerId);
-                firstFinishers.put(heat, winnerId);
-                duelsManager.setDuelWinner(heat, winnerId);
-            }
+            UUID winnerId = event.getDriver().getTPlayer().getUniqueId();
+            plugin.getLogger().info("Setting duel winner: " + winnerId);
+            firstFinishers.put(heat, winnerId);
+            duelsManager.setDuelWinner(heat, winnerId);
         }
 
         if (event.getDriver().getPosition() == 2) {
