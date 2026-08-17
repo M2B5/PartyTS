@@ -133,37 +133,15 @@ public class DatabaseEloRatingSystem {
         return databaseManager.getLeaderboardAsync(limit);
     }
 
+    public CompletableFuture<DatabaseManager.LeaderboardPage> getLeaderboardPage(int page, int pageSize) {
+        return databaseManager.getLeaderboardPageAsync(page, pageSize);
+    }
+
     public CompletableFuture<Void> updatePlayerName(UUID playerId, String playerName) {
         return databaseManager.updatePlayerAsync(playerId, playerName);
     }
 
-    // Synchronous methods for backward compatibility (use sparingly)
-    public int getPlayerEloSync(UUID playerId) {
-        try {
-            return getPlayerElo(playerId).get();
-        } catch (Exception e) {
-            plugin.getLogger().warning("Failed to get player ELO synchronously: " + e.getMessage());
-            return defaultElo;
-        }
-    }
-
-    public int getPlayerWinsSync(UUID playerId) {
-        try {
-            return getPlayerWins(playerId).get();
-        } catch (Exception e) {
-            plugin.getLogger().warning("Failed to get player wins synchronously: " + e.getMessage());
-            return 0;
-        }
-    }
-
-    public int getPlayerLossesSync(UUID playerId) {
-        try {
-            return getPlayerLosses(playerId).get();
-        } catch (Exception e) {
-            plugin.getLogger().warning("Failed to get player losses synchronously: " + e.getMessage());
-            return 0;
-        }
-    }
+    // Synchronous setters here were blocking the main thread
 
     public static class EloChange {
         public final int player1OldElo;

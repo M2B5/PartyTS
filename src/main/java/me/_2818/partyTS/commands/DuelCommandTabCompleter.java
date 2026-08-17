@@ -43,6 +43,8 @@ public class DuelCommandTabCompleter implements TabCompleter {
                 for (Player onlinePlayer : Bukkit.getOnlinePlayers()) {
                     completions.add(onlinePlayer.getName());
                 }
+            } else if (args[0].equalsIgnoreCase("leaderboard") || args[0].equalsIgnoreCase("top")) {
+                completions.add("1");
             } else {
                 // Track names for duel challenges
                 return TimingSystemAPI.getTracks().stream()

@@ -1,5 +1,6 @@
 package me._2818.partyTS.commands;
 
+import me._2818.partyTS.duels.DatabaseEloRatingSystem;
 import me._2818.partyTS.duels.DuelsManager;
 import me._2818.partyTS.utils.FontInfo;
 import me.makkuusen.timing.system.api.TimingSystemAPI;
@@ -21,8 +22,12 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 
 public class DuelCommand implements CommandExecutor {
+
+    private static final int ELO_LOOKUP_TIMEOUT_SECONDS = 5;
+
     private final Plugin plugin;
     private final DuelsManager duelsManager;
 
@@ -73,7 +78,7 @@ public class DuelCommand implements CommandExecutor {
                 break;
             case "leaderboard":
             case "top":
-                handleLeaderboardCommand(player);
+                handleLeaderboardCommand(player, args);
                 break;
             default:
                 if (args.length < 2) {
@@ -221,11 +226,61 @@ public class DuelCommand implements CommandExecutor {
             }
         }
 
+        if (ranked && duelsManager.isRankedDuelsEnabled()) {
+            sendRankedDuelRequest(player, target, track, laps, pits, collisions, drs);
+            return;
+        }
+
         if (duelsManager.createDuelInvite(player, target, track, laps, pits, collisions, drs, ranked)) {
-            sendDuelRequest(player, target, track, laps, pits, collisions, drs, ranked);
+            sendDuelRequest(player, target, track, laps, pits, collisions, drs, ranked, null);
         } else {
             player.sendMessage("§cCould not send duel request. The player might already have a pending invite.");
         }
+    }
+
+    private void sendRankedDuelRequest(Player challenger, Player target, Track track, int laps, int pits,
+                                       boolean collisions, boolean drsEnabled) {
+        DatabaseEloRatingSystem eloSystem = duelsManager.getEloSystem();
+        UUID challengerId = challenger.getUniqueId();
+        UUID targetId = target.getUniqueId();
+
+        eloSystem.getPlayerStatsAsync(challengerId)
+                .thenCombine(eloSystem.getPlayerStatsAsync(targetId), (challengerStats, targetStats) ->
+                        challenger.getName() + " (" + challengerStats.elo() + ") vs "
+                                + target.getName() + " (" + targetStats.elo() + ")")
+                .orTimeout(ELO_LOOKUP_TIMEOUT_SECONDS, TimeUnit.SECONDS)
+                .whenComplete((eloText, error) -> resumeOnMainThread(() ->
+                        completeRankedDuelRequest(challenger, target, track, laps, pits, collisions, drsEnabled,
+                                eloText, error)));
+    }
+
+    private void completeRankedDuelRequest(Player challenger, Player target, Track track, int laps, int pits,
+                                           boolean collisions, boolean drsEnabled, String eloText, Throwable error) {
+        if (error != null) {
+            plugin.getLogger().warning("Could not read the ELO ratings for a ranked duel between "
+                    + challenger.getName() + " and " + target.getName() + ": " + error);
+            challenger.sendMessage("§cCould not send the ranked duel request: your ELO ratings couldn't be read. "
+                    + "Please try again.");
+            return;
+        }
+
+        if (!challenger.isOnline() || !target.isOnline()) {
+            challenger.sendMessage("§cCould not send duel request. " + target.getName() + " is no longer online.");
+            return;
+        }
+
+        if (duelsManager.createDuelInvite(challenger, target, track, laps, pits, collisions, drsEnabled, true)) {
+            sendDuelRequest(challenger, target, track, laps, pits, collisions, drsEnabled, true, eloText);
+        } else {
+            challenger.sendMessage("§cCould not send duel request. The player might already have a pending invite.");
+        }
+    }
+
+    private void resumeOnMainThread(Runnable task) {
+        if (!plugin.isEnabled()) {
+            return;
+        }
+        Bukkit.getScheduler().runTask(plugin, task);
     }
 
     private void handleAccept(Player player) {
@@ -312,34 +367,57 @@ public class DuelCommand implements CommandExecutor {
             });
     }
 
-    private void handleLeaderboardCommand(Player player) {
+    private static final int LEADERBOARD_PAGE_SIZE = 10;
+
+    private void handleLeaderboardCommand(Player player, String[] args) {
         if (!duelsManager.isRankedDuelsEnabled()) {
             player.sendMessage("§cRanked duels are not enabled on this server!");
             return;
         }
 
-        duelsManager.getEloSystem().getTopPlayers(10)
-            .thenAccept(topPlayers -> {
-                if (topPlayers.isEmpty()) {
+        int requestedPage = 1;
+        if (args.length >= 2) {
+            try {
+                requestedPage = Math.max(1, Integer.parseInt(args[1]));
+            } catch (NumberFormatException e) {
+                player.sendMessage("§cInvalid page number!");
+                return;
+            }
+        }
+
+        final int pageArg = requestedPage;
+        duelsManager.getEloSystem().getLeaderboardPage(pageArg, LEADERBOARD_PAGE_SIZE)
+            .thenCompose(page -> {
+                if (page.entries().isEmpty() && page.totalPlayers() > 0) {
+                    return duelsManager.getEloSystem().getLeaderboardPage(page.totalPages(), LEADERBOARD_PAGE_SIZE);
+                }
+                return java.util.concurrent.CompletableFuture.completedFuture(page);
+            })
+            .thenAccept(page -> {
+                if (page.entries().isEmpty()) {
                     player.sendMessage("§cNo ranked duel data available yet!");
                     return;
                 }
 
+                int currentPage = page.page();
+                int totalPages = page.totalPages();
+
                 TextComponent.Builder leaderboardBuilder = Component.text()
                         .append(Component.text("=== ", secondaryColor))
                         .append(Component.text("ELO Leaderboard", primaryColor, TextDecoration.BOLD))
+                        .append(Component.text(" (Page " + currentPage + "/" + totalPages + ")", defaultColor))
                         .append(Component.text(" ===", secondaryColor))
                         .append(Component.newline());
 
-                for (var entry : topPlayers) {
+                for (var entry : page.entries()) {
                     int position = entry.rank();
                     String playerName = entry.playerName() != null ? entry.playerName() : "Unknown";
                     int elo = entry.elo();
                     int wins = entry.wins();
                     int losses = entry.losses();
-                    
+
                     TextColor positionColor = position <= 3 ? acceptColor : defaultColor;
-                    
+
                     leaderboardBuilder.append(Component.text(position + ". ", positionColor))
                             .append(Component.text(playerName, defaultColor))
                             .append(Component.text(" - ", secondaryColor))
@@ -350,6 +428,24 @@ public class DuelCommand implements CommandExecutor {
                             .append(Component.text(losses + "L", denyColor))
                             .append(Component.text(")", secondaryColor))
                             .append(Component.newline());
+                }
+
+                if (currentPage > 1) {
+                    leaderboardBuilder.append(Component.text("[<< Prev]", secondaryColor, TextDecoration.BOLD)
+                            .clickEvent(ClickEvent.runCommand("/duel leaderboard " + (currentPage - 1)))
+                            .hoverEvent(Component.text("Go to page " + (currentPage - 1), defaultColor)));
+                } else {
+                    leaderboardBuilder.append(Component.text("[<< Prev]", NamedTextColor.DARK_GRAY));
+                }
+
+                leaderboardBuilder.append(Component.text("  Page " + currentPage + "/" + totalPages + "  ", defaultColor));
+
+                if (currentPage < totalPages) {
+                    leaderboardBuilder.append(Component.text("[Next >>]", secondaryColor, TextDecoration.BOLD)
+                            .clickEvent(ClickEvent.runCommand("/duel leaderboard " + (currentPage + 1)))
+                            .hoverEvent(Component.text("Go to page " + (currentPage + 1), defaultColor)));
+                } else {
+                    leaderboardBuilder.append(Component.text("[Next >>]", NamedTextColor.DARK_GRAY));
                 }
 
                 player.sendMessage(leaderboardBuilder.build());
@@ -380,7 +476,7 @@ public class DuelCommand implements CommandExecutor {
             helpBuilder.append(Component.text("/duel elo [player]", secondaryColor))
                     .append(Component.text(" - View ELO rating", defaultColor))
                     .append(Component.newline())
-                    .append(Component.text("/duel leaderboard", secondaryColor))
+                    .append(Component.text("/duel leaderboard [page]", secondaryColor))
                     .append(Component.text(" - View ELO leaderboard", defaultColor))
                     .append(Component.newline());
         }
@@ -391,7 +487,7 @@ public class DuelCommand implements CommandExecutor {
         player.sendMessage(helpBuilder.build());
     }
 
-    private void sendDuelRequest(Player challenger, Player target, Track track, int laps, int pits, boolean collisions, boolean drsEnabled, boolean ranked) {
+    private void sendDuelRequest(Player challenger, Player target, Track track, int laps, int pits, boolean collisions, boolean drsEnabled, boolean ranked, String eloText) {
         if (ranked) {
             challenger.sendMessage(Component.text("Ranked duel request sent to " + target.getName() + "!", acceptColor));
         } else {
@@ -418,13 +514,9 @@ public class DuelCommand implements CommandExecutor {
         String expirationText = "This invite will expire in " +
                 plugin.getConfig().getInt("duelinvitetimeout", 30) + " seconds";
 
-        String eloText = "";
+        String ratingsText = eloText == null ? "" : eloText;
         String eloChangesText = "";
-        if (ranked && duelsManager.isRankedDuelsEnabled()) {
-            int challengerElo = duelsManager.getPlayerElo(challenger.getUniqueId());
-            int targetElo = duelsManager.getPlayerElo(target.getUniqueId());
-            eloText = challengerName + " (" + challengerElo + ") vs " + targetName + " (" + targetElo + ")";
-            
+        if (ranked && !ratingsText.isEmpty()) {
             // ELO changes will be calculated when the duel completes
             eloChangesText = "ELO changes will be calculated after the duel";
         }
@@ -444,7 +536,7 @@ public class DuelCommand implements CommandExecutor {
                 + FontInfo.getStringWidth(denyText, true);
 
         int expirationWidth = FontInfo.getStringWidth(expirationText, false);
-        int eloWidth = ranked ? FontInfo.getStringWidth(eloText, false) : 0;
+        int eloWidth = ranked ? FontInfo.getStringWidth(ratingsText, false) : 0;
         int eloChangesWidth = ranked ? FontInfo.getStringWidth(eloChangesText, false) : 0;
 
         int maxContentWidth = Math.max(headerWidth,
@@ -478,10 +570,10 @@ public class DuelCommand implements CommandExecutor {
                 .append(Component.text(trackInfo, defaultColor))
                 .append(Component.newline());
 
-        if (ranked && !eloText.isEmpty()) {
+        if (ranked && !ratingsText.isEmpty()) {
             inviteBuilder.append(Component.newline())
                     .append(Component.text(eloPadding))
-                    .append(Component.text(eloText, secondaryColor))
+                    .append(Component.text(ratingsText, secondaryColor))
                     .append(Component.newline())
                     .append(Component.text(eloChangesPadding));
             

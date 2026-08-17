@@ -325,18 +325,6 @@ public class DuelsManager {
         return eloSystem;
     }
 
-    public int getPlayerElo(UUID playerId) {
-        return eloSystem != null ? eloSystem.getPlayerEloSync(playerId) : 0;
-    }
-
-    public int getPlayerWins(UUID playerId) {
-        return eloSystem != null ? eloSystem.getPlayerWinsSync(playerId) : 0;
-    }
-
-    public int getPlayerLosses(UUID playerId) {
-        return eloSystem != null ? eloSystem.getPlayerLossesSync(playerId) : 0;
-    }
-
     public boolean isRankedDuel(Heat heat) {
         return rankedDuels.containsKey(heat);
     }

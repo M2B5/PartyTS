@@ -50,7 +50,7 @@ PartyTS provides two main commands: `/party` for managing groups and `/duel` for
 | `/duel accept`                                               | Accepts a pending duel invitation.                           | `partyts.user`  |
 | `/duel decline`                                              | Declines a pending duel invitation.                          | `partyts.user`  |
 | `/duel elo [player]`                                         | Views ELO rating for yourself or another player.             | `partyts.user`  |
-| `/duel leaderboard`                                          | Shows the top 10 players by ELO rating.                     | `partyts.user`  |
+| `/duel leaderboard [page]`                                   | Shows the ELO leaderboard, 10 players per page.             | `partyts.user`  |
 
 ### Ranked Duels
 

@@ -197,36 +197,55 @@ public class DatabaseManager {
     }
 
     public CompletableFuture<List<LeaderboardEntry>> getLeaderboardAsync(int limit) {
+        return getLeaderboardPageAsync(1, limit).thenApply(LeaderboardPage::entries);
+    }
+
+    public CompletableFuture<LeaderboardPage> getLeaderboardPageAsync(int page, int pageSize) {
         return CompletableFuture.supplyAsync(() -> {
-            String sql = """
-                SELECT uuid, player_name, elo, wins, losses 
-                FROM players 
+            String countSql = """
+                SELECT COUNT(*) AS total
+                FROM players
                 WHERE wins + losses > 0
-                ORDER BY elo DESC 
-                LIMIT ?
             """;
-            
+            String sql = """
+                SELECT uuid, player_name, elo, wins, losses
+                FROM players
+                WHERE wins + losses > 0
+                ORDER BY elo DESC
+                LIMIT ? OFFSET ?
+            """;
+
+            int totalPlayers = 0;
             List<LeaderboardEntry> leaderboard = new ArrayList<>();
-            try (PreparedStatement stmt = getConnection().prepareStatement(sql)) {
-                stmt.setInt(1, limit);
-                ResultSet rs = stmt.executeQuery();
-                
-                int rank = 1;
-                while (rs.next()) {
-                    leaderboard.add(new LeaderboardEntry(
-                        rank++,
-                        UUID.fromString(rs.getString("uuid")),
-                        rs.getString("player_name"),
-                        rs.getInt("elo"),
-                        rs.getInt("wins"),
-                        rs.getInt("losses")
-                    ));
+            try (PreparedStatement countStmt = getConnection().prepareStatement(countSql)) {
+                ResultSet countRs = countStmt.executeQuery();
+                if (countRs.next()) {
+                    totalPlayers = countRs.getInt("total");
+                }
+
+                int offset = (page - 1) * pageSize;
+                try (PreparedStatement stmt = getConnection().prepareStatement(sql)) {
+                    stmt.setInt(1, pageSize);
+                    stmt.setInt(2, offset);
+                    ResultSet rs = stmt.executeQuery();
+
+                    int rank = offset + 1;
+                    while (rs.next()) {
+                        leaderboard.add(new LeaderboardEntry(
+                            rank++,
+                            UUID.fromString(rs.getString("uuid")),
+                            rs.getString("player_name"),
+                            rs.getInt("elo"),
+                            rs.getInt("wins"),
+                            rs.getInt("losses")
+                        ));
+                    }
                 }
             } catch (SQLException e) {
                 plugin.getLogger().warning("Failed to get leaderboard: " + e.getMessage());
             }
-            
-            return leaderboard;
+
+            return new LeaderboardPage(leaderboard, totalPlayers, page, pageSize);
         }, executor);
     }
 
@@ -309,4 +328,10 @@ public class DatabaseManager {
     public record PlayerStats(int elo, int wins, int losses) {}
     
     public record LeaderboardEntry(int rank, UUID uuid, String playerName, int elo, int wins, int losses) {}
+
+    public record LeaderboardPage(List<LeaderboardEntry> entries, int totalPlayers, int page, int pageSize) {
+        public int totalPages() {
+            return Math.max(1, (totalPlayers + pageSize - 1) / pageSize);
+        }
+    }
 }
